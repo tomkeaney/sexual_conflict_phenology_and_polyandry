@@ -1,0 +1,83 @@
+---
+title: "Phenology simulation"
+format: html
+---
+
+## Load packages
+
+```{r}
+library(tidyverse)
+library(MoMAColors)
+```
+
+
+## Converting matlab code to R
+
+This project is an extension of [Ekrem and Kokko (2023)](https://doi.org/10.1093/evolut/qpac054). As a first step, we convert the `matlab` code that study was written in to `R` code, which is more familiar for me.
+
+```{r}
+simulation_function <- function(data,
+                                popsize = 10,
+                                d,
+                                v,
+                                C,
+                                L,
+                                mut,
+                                mutsize,
+                                initmean_shared = 0,
+                                initmean_male = 0,
+                                initmean_female = 0,
+                                shared,
+                                generations = 100){
+ 
+  v <- v / (popsize/2) # to make the situation comparable with the assumptions in the numerical stuff
+  
+  track_matings <- 20 # number of matings we track for a female - if she's mated with >20 males and the first 20 are all sperm depleted this is a potential problem, in that case please increase this value
+  
+  # initialise the population
+  pop <-
+    tibble(sex = sign(runif(popsize, -1, 1)),
+           shared_allele_1 = rnorm(popsize, 0, 1) + initmean_shared,
+           shared_allele_2 = rnorm(popsize, 0, 1) + initmean_shared,
+           male_allele_1 = rnorm(popsize, 0, 1) + initmean_male,
+           male_allele_2 = rnorm(popsize, 0, 1) + initmean_male,
+           female_allele_1 = rnorm(popsize, 0, 1) + initmean_female,
+           female_allele_2 = rnorm(popsize, 0, 1) + initmean_female,
+           male_deathrate = rep(d, popsize),
+           female_deathrate = rep(d, popsize))
+  
+  # next we need some code to denote which loci are expressed in which sex
+  
+  # not done yet
+  
+# run one mating season
+# figure out when each individual emerges (according to their timing phenotype)
+
+  data <- matrix(NA, nrow = ((generations - 1) %/% 10) + 1, ncol = 4)
+ # we plan to plot data every 10 generations (every generation clutters the timeline with too many points...)
+ 
+  t_for_axis <- seq(from = 0, to = generations, by = 10)
+  
+  # start the simulation
+  
+  while(gen_counter < generations){
+  
+    x <- pop %>% 
+      rowwise() %>% 
+      mutate(phenotype = if_else(sex < 0, mean(shared_allele_1, shared_allele_2, male_allele_1, male_allele_2),
+                                 mean(shared_allele_1, shared_allele_2, female_allele_1, female_allele_2))) %>% 
+      ungroup() %>% 
+      mutate(stochastic_value = runif(n = n()),
+             emergence_time = phenotype + log(stochastic_value/(1 - stochastic_value)),
+             death_time = if_else(sex < 0, emergence_time + rexp(n  = n(), 1/male_deathrate),
+                                  emergence_time + rexp(n  = n(), 1/female_deathrate)))
+    
+  }
+ 
+    
+    
+ 
+}
+```
+
+

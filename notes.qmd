@@ -1,0 +1,28 @@
+---
+title: "Project meeting notes"
+format: html
+---
+
+## 17/10/23
+
+### Brief summary of the 2023 paper
+
+#### Problem one: when should each sex arrive or emerge at a resource.
+
+- Males often arrive early, and this has fitness benefits - early monopolisation of females, the chance to mate throughout the mating season etc.
+
+- Females might not want to arrive so early because they don't have to mate so much, mating a lot might be bad, or they want to time arrival/emergence with resource availability for their offspring.
+
+- But if males keep arriving earlier, selection at one level starts to favour earlier arrival in females as well, because the risk of going unmated becomes large.
+
+- This can start a runaway process of earlier and earlier emergence.
+
+- However this is eventually stopped when female arrival gets too far away from the resource peak. 
+
+- The result is sexual conflict load, where females are potentially not optimally adapted on either front.
+
+#### Extending this study 
+
+- The current model only considers females that can be inseminated once. What happens if there is polyandry?
+
+- My first thoughts are: females will deplete male sperm stores more rapidly, which might increase the rate of matelessness and select females that arrive earlier. This pushes emergence time further still from the resource. However, now there is sperm competition. If there is last male precedence, then perhaps selection on males to arrive earlier is abated. This is potentially good for the population because the arms race does not drive arrival time as far away from the resource as previously found. 
