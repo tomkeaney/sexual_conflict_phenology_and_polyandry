@@ -3,9 +3,7 @@ title: "Project meeting notes"
 format: html
 ---
 
-## 17/10/23
-
-### Brief summary of the 2023 paper
+## Brief summary of the 2023 paper
 
 #### Problem one: when should each sex arrive or emerge at a resource.
 
@@ -26,3 +24,28 @@ format: html
 - The current model only considers females that can be inseminated once. What happens if there is polyandry?
 
 - My first thoughts are: females will deplete male sperm stores more rapidly, which might increase the rate of matelessness and select females that arrive earlier. This pushes emergence time further still from the resource. However, now there is sperm competition. If there is last male precedence, then perhaps selection on males to arrive earlier is abated. This is potentially good for the population because the arms race does not drive arrival time as far away from the resource as previously found. 
+
+## 17/10/23
+
+- The West Australian Bush cricket
+
+- Leigh will send through some info on the lifecycle / other relevant stuff like sperm precedence etc.
+
+- They are sperm mixers, with a little bit of second male precedence (I think)
+
+- Resources become available as pollen during the brief flowering season. Heat waves at the end of this period result in very high mortality for adults, but eggs can survive in diapause. 
+
+- Females are polyandrous, but the extent to which they are depends on resource availability.
+
+- If resources are abundant, then females become less interested in mating and sexual selection is stronger in males than females.
+
+- If resources are scarce, females depend upon the male spermatophore for nutrition. Males can only produce one spermatophore every 5-10 days, so they quickly become a limiting resource. Females therefore compete vigorously for males and sexual selection potentially becomes female-biased. 
+
+- This is relevant for protandry because it determines reproductive success in both sexes, but in a way that depends upon resource availability. It is therefore a really nice system to test the models predictions with manipulative experiments. 
+
+- Protandry can be viewed in terms of the length of development. This may be plastic and reflective of the resource availability conditions.
+
+- i.e. if you make resources scarce, then females should plastically shorten their development, whereas if resources are abundant, females should match development with male availability and resource availability. 
+
+- I need more info on the above to make the prediction clear.
+
