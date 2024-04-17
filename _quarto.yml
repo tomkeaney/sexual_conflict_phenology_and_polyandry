@@ -8,6 +8,8 @@ website:
     left:
       - href: notes.qmd
         text: Project meeting notes
+      - href: numeric_model.qmd
+        text: Numeric progress
       - href: simulation.qmd
         text: Simulation progress
 

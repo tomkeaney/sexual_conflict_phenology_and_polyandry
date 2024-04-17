@@ -11,13 +11,13 @@ format: html
 
 - Females might not want to arrive so early because they don't have to mate so much, mating a lot might be bad, or they want to time arrival/emergence with resource availability for their offspring.
 
-- But if males keep arriving earlier, selection at one level starts to favour earlier arrival in females as well, because the risk of going unmated becomes large.
+- But if males keep arriving earlier, selection begins to favour earlier arrival in females as well, because the risk of going unmated grows larger.
 
-- This can start a runaway process of earlier and earlier emergence.
+- This can start a runaway process of earlier and earlier emergence for both sexes. In typical interlocus conflict fashion, males harm females as a biproduct of male-male competition for fertilisations. Absolute female fitness decreases because they evolve to emerge/arrive further from the resource peak.
 
-- However this is eventually stopped when female arrival gets too far away from the resource peak. 
+- The runaway process is eventually stopped when female arrival gets too far away from the resource peak. 
 
-- The result is sexual conflict load, where females are potentially not optimally adapted on either front.
+- The result is sexual conflict load, where females are potentially not optimally adapted on either front (finding mates or enjoying lots of resources).
 
 #### Extending this study 
 
@@ -49,3 +49,25 @@ format: html
 
 - I need more info on the above to make the prediction clear.
 
+
+# 27/11/23
+
+- The goal is to model the evolution of arrival time in the mating pool, for each sex. 
+
+- In _Kawanaphila nartee_, an Australian bushcricket, arrival time is determined by first-instar to adult development time.   
+
+- Who should arrive first is not so clear in this system, because there is a sex-role reversal in mate competition. When resources are scarce (often at the start of the season), the OSR is female-biased, because males produce spermatophores slowly, keeping them in 'time out' longer than females. Females are also heavily incentivised to mate even if they don't need sperm, because spermatophores provide a valuable source of nutrients.
+
+- When resources are abundant, sex-roles reverse, and intrasexual competition for matings becomes stronger among males than it is among females. Males can produce spermatophores quickly and females don't need the nutrients they provide as much, as alternative feeding opportunities are plentiful. 
+
+- The breeding season ends when the first heatwave hits, which triggers a mass-mortality event. Eggs can survive in a state of diapause. Is there an element of bet-hedging at play here?
+
+- With this and prior theory in mind, the sex that should develop faster depends on the availability of resources. If plentiful, males should emerge first (assuming that early emergence increases mating success/fitness). If scarce, females should develop faster to reap the early arriver rewards. 
+
+- Should one expect a positive correlation between early arrival and female fecundity potential i.e. fast developing females might be in the best condition OR they might have poor fecundity potential because they trade-off body size with mating opportunities.
+
+# 03/04/24
+
+- To model plasticity, we can consider development time as having one of two states, decided by a resource availability threshold. If resources are abundant to the point of exceeding the threshold, females are choosy and thus develop quickly; below the threshold, females compete with other females for matings and therefore develop slowly (or are not selected to mature early).  
+
+- One complication is that resource availability also changes throughout the breeding season - resources are scarce early on and abundant later. This drives within-season plasticity for the sexes.

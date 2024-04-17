@@ -1,0 +1,25 @@
+---
+title: "The numeric model"
+---
+
+## General points
+
+- We assume continuous time, where emergence, mating and death can occur at any real value of _t_ within a generation. 
+
+- _Kawanaphila nartee_ has an annual lifecycle, where offspring eclose in early spring and all adults die in the summer, making generations discrete. 
+
+- Fitness is the cumulative number of offspring that survive to breeding age in the next generation (think on this).
+
+- Densities of females and males vary continuously
+
+- The model considers a temporally varying resource that determines reproductive success from mating at a specific time. 
+
+- We assume that males can become sperm depleted. 
+
+## Lifecycle
+
+- Coevolving traits $T_F$ and $T_M$ for female and male emergence/development times (these are quantitative characters).
+
+- Available individuals form mating pairs using mass-action law (closer term to our field is fertilisation kinetics).
+
+- 
