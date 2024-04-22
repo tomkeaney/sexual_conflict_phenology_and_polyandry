@@ -2,6 +2,11 @@
 title: "The numeric model"
 ---
 
+```{r}
+library(tidyverse)
+```
+
+
 ## General points
 
 - We assume continuous time, where emergence, mating and death can occur at any real value of _t_ within a generation. 
@@ -12,14 +17,52 @@ title: "The numeric model"
 
 - Densities of females and males vary continuously
 
-- The model considers a temporally varying resource that determines reproductive success from mating at a specific time. 
+- The model considers a temporally and/or spatially varying resource that determines reproductive success from mating at a specific time. For example, females entering the mating pool just as grass trees flower have plenty of resources and high fecundity. Those females entering the mating pool during the kangaroo paw flowering have less resources and lower fecundity. The same argument extends to whether females mature on kangaroo paws or grass trees. But this isn't a timing problem so we can put it to one side for now.  
 
-- We assume that males can become sperm depleted. 
+- Males can become sperm/spermatophore depleted. The amount of time they spend replenishing their spermatophore depends on local resource abundance. Males grow their spermatophores to a max size (which individually varies and has proxies which females use to choose/ focus their competition potential mating partners).
+
+- The numeric model can be solved to find the hypothetical timing traits that maximise population fitness or the solutions predicted to occur when the sexes coevolve. 
 
 ## Lifecycle
 
-- Coevolving traits $T_F$ and $T_M$ for female and male emergence/development times (these are quantitative characters).
+- Coevolving traits $T_F$ and $T_M$ for female and male emergence/development times (these are quantitative characters - genotypic values).
 
-- Available individuals form mating pairs using mass-action law (closer term to our field is fertilisation kinetics).
+- Available individuals form mating pairs using mass-action law (closer term to our field is fertilisation kinetics). That is, the population-wide rate of mating pairs forming at any _t_ is proportional to the product of male and female densities at time _t_, multiplied with a constant _v_ that characterises male search efficiency.
 
-- 
+- Individuals are available as mates if they have emerged, are alive and not in time-out. For males, time-out is determined by the length of time taken to replenish their spermatophore. For females, time-out is determined by... (**some reading required**). Each indirectly depends on the abundance of resources available immediately following mating. 
+
+**Emergence**
+
+Individuals with Trait value with $T_F$ or $T_M$ display an emergence distribution governed by the equations
+
+$$E_F(t, T_F) = \frac{e^{t-T_F}}{(1 + e^{t - T_F})^2}$$
+
+$$E_M(t, T_M) = \frac{e^{t-T_M}}{(1 + e^{t - T_M})^2}$$
+
+following Zonnevald and Metz (1991) and Ekrem and Kokko (2023).
+
+$E_F(t, T_F)$ and $E_M(t, T_M)$ are the numbers of females and males emerging at time _t_. 
+
+I understand how equations work a lot better after plotting them. For some values of _t_ and $T_i$ let's see what this function looks like.
+
+```{r}
+  expand_grid(t = seq(from = -8, to = 8, by = 0.01),
+              T_i = rnorm(50)) %>% 
+  mutate(Emergence = exp(t - T_i)/(1 + exp(t - T_i))^2) %>% 
+  
+  ggplot(aes(x = t, y = Emergence)) +
+  geom_line(aes(group = T_i, colour = T_i)) +
+  labs(y = "Prop. individuals emerging/arriving",
+       x = "Time, t",
+       colour = "Timing trait value") +
+  theme_minimal()
+```
+
+
+**Tracking mating and death**
+
+- Mating dynamics are followed over one breeding season at a time. The sexes encounter one another with search efficiency $v$, where higher values indicate efficient mate finding. Males die with rate $\mu_M$ and females with rate $\mu_F$.
+
+- Ekrem and Kokko (2023) consider a population where a male can become sperm-limited. Should be use a similar approach? Sperm-limitation and the constraints imposed by the spermatophore are separate processes producing mate limitation for females. Whether sperm-limitation ever matters in this species is a matter for debate.  
+
+
