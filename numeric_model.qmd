@@ -3,6 +3,7 @@ title: "The numeric model"
 ---
 
 ```{r}
+#| results: hide
 library(tidyverse)
 ```
 
