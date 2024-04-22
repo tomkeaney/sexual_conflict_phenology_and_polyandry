@@ -1,5 +1,8 @@
 ---
 title: "The numeric model"
+execute:
+  warning: false
+  message: false
 ---
 
 ```{r}
