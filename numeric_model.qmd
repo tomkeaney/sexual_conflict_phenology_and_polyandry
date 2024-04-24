@@ -10,34 +10,33 @@ execute:
 library(tidyverse)
 ```
 
-
 ## General points
 
-- We assume continuous time, where emergence, mating and death can occur at any real value of _t_ within a generation. 
+-   We assume continuous time, where emergence, mating and death can occur at any real value of *t* within a generation.
 
-- _Kawanaphila nartee_ has an annual lifecycle, where offspring eclose in early spring and all adults die in the summer, making generations discrete. 
+-   *Kawanaphila nartee* has an annual lifecycle, where offspring eclose in early spring and all adults die in the summer, making generations discrete.
 
-- Fitness is the cumulative number of offspring that survive to breeding age in the next generation (think on this).
+-   Fitness is the cumulative number of offspring that survive to breeding age in the next generation (think on this).
 
-- Densities of females and males vary continuously
+-   Densities of females and males vary continuously
 
-- The model considers a temporally and/or spatially varying resource that determines reproductive success from mating at a specific time. For example, females entering the mating pool just as grass trees flower have plenty of resources and high fecundity. Those females entering the mating pool during the kangaroo paw flowering have less resources and lower fecundity. The same argument extends to whether females mature on kangaroo paws or grass trees. But this isn't a timing problem so we can put it to one side for now.  
+-   The model considers a temporally and/or spatially varying resource that determines reproductive success from mating at a specific time. For example, females entering the mating pool just as grass trees flower have plenty of resources and high fecundity. Those females entering the mating pool during the kangaroo paw flowering have less resources and lower fecundity. The same argument extends to whether females mature on kangaroo paws or grass trees. But this isn't a timing problem so we can put it to one side for now.
 
-- Males can become sperm/spermatophore depleted. The amount of time they spend replenishing their spermatophore depends on local resource abundance. Males grow their spermatophores to a max size (which individually varies and has proxies which females use to choose/ focus their competition potential mating partners).
+-   Males can become sperm/spermatophore depleted. The amount of time they spend replenishing their spermatophore depends on local resource abundance. Males grow their spermatophores to a max size (which individually varies and has proxies which females use to choose/ focus their competition potential mating partners).
 
-- The numeric model can be solved to find the hypothetical timing traits that maximise population fitness or the solutions predicted to occur when the sexes coevolve. 
+-   The numeric model can be solved to find the hypothetical timing traits that maximise population fitness or the solutions predicted to occur when the sexes coevolve.
 
 ## Lifecycle
 
-- Coevolving traits $T_F$ and $T_M$ for female and male emergence/development times (these are quantitative characters - genotypic values).
+-   Coevolving traits $T_F$ and $T_M$ for female and male emergence/development times (these are quantitative characters - genotypic values).
 
-- Available individuals form mating pairs using mass-action law (closer term to our field is fertilisation kinetics). That is, the population-wide rate of mating pairs forming at any _t_ is proportional to the product of male and female densities at time _t_, multiplied with a constant _v_ that characterises male search efficiency.
+-   Available individuals form mating pairs using mass-action law (closer term to our field is fertilisation kinetics). That is, the population-wide rate of mating pairs forming at any *t* is proportional to the product of male and female densities at time *t*, multiplied with a constant *v* that characterises male search efficiency.
 
-- Individuals are available as mates if they have emerged, are alive and not in time-out. For males, time-out is determined by the length of time taken to replenish their spermatophore. For females, time-out is determined by... (**some reading required**). Each indirectly depends on the abundance of resources available immediately following mating. 
+-   Individuals are available as mates if they have emerged, are alive and not in time-out. For males, time-out is determined by the length of time taken to replenish their spermatophore. For females, time-out is determined by... (**some reading required**). Each indirectly depends on the abundance of resources available immediately following mating.
 
-**Emergence**
+### Emergence
 
-Individuals with Trait value with $T_F$ or $T_M$ display an emergence distribution governed by the equations
+Individuals with trait values $T_F$ or $T_M$ display an emergence distribution governed by the equations
 
 $$E_F(t, T_F) = \frac{e^{t-T_F}}{(1 + e^{t - T_F})^2}$$
 
@@ -45,13 +44,13 @@ $$E_M(t, T_M) = \frac{e^{t-T_M}}{(1 + e^{t - T_M})^2}$$
 
 following Zonnevald and Metz (1991) and Ekrem and Kokko (2023).
 
-$E_F(t, T_F)$ and $E_M(t, T_M)$ are the numbers of females and males emerging at time _t_. 
+$E_F(t, T_F)$ and $E_M(t, T_M)$ are the numbers of females and males emerging at time *t*.
 
-I understand how equations work a lot better after plotting them. For some values of _t_ and $T_i$ let's see what this function looks like.
+I understand how equations work a lot better after plotting them. For some values of *t* and $T_i$ let's see what this function looks like.
 
 ```{r}
   expand_grid(t = seq(from = -8, to = 8, by = 0.01),
-              T_i = rnorm(50)) %>% 
+              T_i = runif(50, min = -2, max = 2)) %>% 
   mutate(Emergence = exp(t - T_i)/(1 + exp(t - T_i))^2) %>% 
   
   ggplot(aes(x = t, y = Emergence)) +
@@ -62,11 +61,77 @@ I understand how equations work a lot better after plotting them. For some value
   theme_minimal()
 ```
 
+### Tracking mating and death
 
-**Tracking mating and death**
+-   Mating dynamics are followed over one breeding season at a time. The sexes encounter one another with search efficiency $v$, where higher values indicate efficient mate finding. Males die with rate $\mu_M$ and females with rate $\mu_F$.
 
-- Mating dynamics are followed over one breeding season at a time. The sexes encounter one another with search efficiency $v$, where higher values indicate efficient mate finding. Males die with rate $\mu_M$ and females with rate $\mu_F$.
+-   Ekrem and Kokko (2023) consider a population where a male can become sperm-limited. Should we use a similar approach? Sperm-limitation (imposes sexual selection on females) and the constraints imposed by the spermatophore (imposes natural selection on females) are separate processes producing mate limitation for females. Whether sperm-limitation ever matters in this species is a matter for debate.
 
-- Ekrem and Kokko (2023) consider a population where a male can become sperm-limited. Should be use a similar approach? Sperm-limitation and the constraints imposed by the spermatophore are separate processes producing mate limitation for females. Whether sperm-limitation ever matters in this species is a matter for debate.  
+Here, I rewrite the equations that describe the population to accommodate a time-in, time-out mating framework. Individuals arrive in the time-in state and once mated move to the time-out state. The sexes then have specific rates at which they transition back into the mating pool. We start by considering a simple case, where females gain no direct benefits from mating i.e. once-mated and multiple mated females are not distinguished.
 
+$$\frac{df_0}{dt} = -vm_0(t)f_0(t) - \mu_Ff_0(t) + \delta_Ff_1(t) +  E_F(t, T_F)$$
 
+$$\frac{df_1}{dt} = vm_0(t)f_0(t) - \mu_Ff_1(t) - \delta_Ff_1(t)$$
+
+$$\frac{dm_0}{dt} = -vm_0(t)f_0(t) - \mu_Mm_0(t) + \delta_Mm_1(t) + E_M(t, T_M)$$
+
+$$\frac{dm_1}{dt} = vm_0(t)f_0(t) - \mu_Mm_1(t) - \delta_Mm_1(t)$$
+
+However, female *K. nartee* get large direct benefits from consuming the spermatophore, resulting in increased fecundity. Females that have mated multiple times might therefore be better considered as a distinct class from those that have mated once. The situation is made additionally complex because the fitness benefits associated with spermatophore consumption are moderated by local resource abundance. When resources are plentiful, females become reluctant to mate, whereas there is intrasexual competition among females for male spermatophores when resources are scarce.
+
+**Some equation work here**
+
+## Reproductive success
+
+### Temporally defined seasons
+
+-   Resources become available as some time before $t = 0$, resource abundance peaks at $t = 0$ and resources decline thereafter.
+
+Following Ekrem and Kokko (2023), we model reproductive success, $R(t)$, using the same functional form for the environment as for the emergence time distributions defined above. We write reproductive success as
+
+$$R(t) = \frac{400e^{t/L}}{(1 + e^{t/L})^2}$$ 
+where $L$ is the length of the season. When $L$ is small, reproductive success declines quickly as the temporal mismatch with the resource peak increases. The 400 value is simply an aesthetic inclusion, producing a reproductive output of 100 when the temporal mismatch = 0. It has no affect on the evolutionary outcome, which depends on relative reproductive success.
+
+```{r}
+  expand_grid(t = seq(from = -10, to = 10, by = 0.01),
+              L = runif(10, 0, 2)) %>% 
+  mutate(`Reproductive output` = 400*exp(t / L)/(1 + exp(t / L))^2) %>% 
+  
+  ggplot(aes(x = t, y = `Reproductive output`)) +
+  geom_line(aes(group = L, colour = L)) +
+  coord_cartesian(xlim = c(-10, 10)) +
+  labs(y = "Reproductive output",
+       x = "Time, t",
+       colour = "Length of season") +
+  theme_minimal()
+```
+
+### Context dependent spermatophore importance
+
+However, $R(t)$ is also affected by the number of spermatophores a female consumes. With this in mind, reproductive success can be rewritten as **not sure I've got the notation of S correct**
+
+$$R(t, S) = \frac{400e^{t/L}}{(1 + e^{t/L})^2} + S(t)n$$
+where $S(t)$ describes the importance of spermatophores at a resource at time $t$ and $n$ is the number of spermatophores ingested by the female (essentially a Bateman gradient). 
+
+$$S(t) = \alpha(100 - \frac{400e^{t/L}}{(1 + e^{t/L})^2})$$
+The $\alpha$ parameter controls the magnitude of fecundity increase attributed to the spermatophore, relative to resources available via other paths. If $\alpha = 1$ (note this is unrealistically large), each spermatophore consumed when no other resources are available provides the same benefit to fecundity as does timing reproduction perfectly with the temporal resource peak. The second term in the equation moderates the Bateman gradient such that the effect of resource availability on fecundity negatively correlates with the effect of spermatophore consumption on fecundity. When $t = 0$ this second term equals zero i.e. there are no fecundity benefits from spermatophore ingestion.  
+
+When $n = 1$ spermatophore ingestion raises the fecundity floor:
+
+```{r}
+  expand_grid(t = seq(from = -10, to = 10, by = 0.01),
+              L = runif(10, 0, 2),
+              a = seq(from = 0, to = 1, by = 0.1)) %>% 
+  mutate(`Reproductive output` = 400*exp(t / L)/(1 + exp(t / L))^2 +
+           (a * (100 - (400*exp(t / L)/(1 + exp(t / L))^2)))) %>% 
+  ggplot(aes(x = t, y = `Reproductive output`)) +
+  geom_line(aes(group = L, colour = L)) +
+  coord_cartesian(xlim = c(-10, 10)) +
+  facet_wrap(~a) +
+  labs(y = "Reproductive output",
+       x = "Time, t",
+       colour = "Length of season") +
+  theme_minimal()
+```
+ 
+ Of course, we assume that both sexes can enter the mating pool at a time completely disassociated with resource availability. It may not be realistic to assume males can produce spermatophores when there are no floral resources.
