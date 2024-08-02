@@ -67,15 +67,18 @@ I understand how equations work a lot better after plotting them. For some value
 
 -   Ekrem and Kokko (2023) consider a population where a male can become sperm-limited. Should we use a similar approach? Sperm-limitation (imposes sexual selection on females) and the constraints imposed by the spermatophore (imposes natural selection on females) are separate processes producing mate limitation for females. Whether sperm-limitation ever matters in this species is a matter for debate.
 
-Here, I rewrite the equations that describe the population to accommodate a time-in, time-out mating framework. Individuals arrive in the time-in state and once mated move to the time-out state. The sexes then have specific rates at which they transition back into the mating pool. We start by considering a simple case, where females gain no direct benefits from mating i.e. once-mated and multiple mated females are not distinguished.
+Here, I rewrite the equations that describe the population to accommodate a time-in, time-out mating framework. Individuals arrive in the time-in state and once mated move to the time-out state. The sexes then have specific rates ($\delta_F$ and $\delta_M$) at which they transition back into the mating pool. We start by considering a simple case, where females gain no direct benefits from mating i.e. once-mated and multiple mated females are not distinguished. Let $f_0$ and $m_0$ equal the number of mature females and males that are receptive to mating, respectively. $f_1$ and $m_1$ represent the number of mature females and males that are in time-out. 
 
-$$\frac{df_0}{dt} = -vm_0(t)f_0(t) - \mu_Ff_0(t) + \delta_Ff_1(t) +  E_F(t, T_F)$$
+\begin{align}
+\frac{df_0}{dt} &= -vm_0(t)f_0(t) - \mu_Ff_0(t) + \delta_Ff_1(t) +  E_F(t, T_F) \\
 
-$$\frac{df_1}{dt} = vm_0(t)f_0(t) - \mu_Ff_1(t) - \delta_Ff_1(t)$$
+\frac{df_1}{dt} &= vm_0(t)f_0(t) - \mu_Ff_1(t) - \delta_Ff_1(t) \\
 
-$$\frac{dm_0}{dt} = -vm_0(t)f_0(t) - \mu_Mm_0(t) + \delta_Mm_1(t) + E_M(t, T_M)$$
+\frac{dm_0}{dt} &= -vm_0(t)f_0(t) - \mu_Mm_0(t) + \delta_Mm_1(t) + E_M(t, T_M) \\
 
-$$\frac{dm_1}{dt} = vm_0(t)f_0(t) - \mu_Mm_1(t) - \delta_Mm_1(t)$$
+\frac{dm_1}{dt} &= vm_0(t)f_0(t) - \mu_Mm_1(t) - \delta_Mm_1(t)
+\end{align}
+
 
 However, female *K. nartee* get large direct benefits from consuming the spermatophore, resulting in increased fecundity. Females that have mated multiple times might therefore be better considered as a distinct class from those that have mated once. The situation is made additionally complex because the fitness benefits associated with spermatophore consumption are moderated by local resource abundance. When resources are plentiful, females become reluctant to mate, whereas there is intrasexual competition among females for male spermatophores when resources are scarce.
 
@@ -87,7 +90,7 @@ However, female *K. nartee* get large direct benefits from consuming the spermat
 
 -   Resources become available as some time before $t = 0$, resource abundance peaks at $t = 0$ and resources decline thereafter.
 
-Following Ekrem and Kokko (2023), we model reproductive success, $R(t)$, using the same functional form for the environment as for the emergence time distributions defined above. We write reproductive success as
+Following Ekrem and Kokko (2023), we model reproductive success, $R(t)$, using the same functional form for the environment as for the emergence time distributions defined above. We write reproductive success after mating at time $t$ as
 
 $$R(t) = \frac{400e^{t/L}}{(1 + e^{t/L})^2}$$ 
 where $L$ is the length of the season. When $L$ is small, reproductive success declines quickly as the temporal mismatch with the resource peak increases. The 400 value is simply an aesthetic inclusion, producing a reproductive output of 100 when the temporal mismatch = 0. It has no affect on the evolutionary outcome, which depends on relative reproductive success.
@@ -111,7 +114,7 @@ where $L$ is the length of the season. When $L$ is small, reproductive success d
 However, $R(t)$ is also affected by the number of spermatophores a female consumes. With this in mind, reproductive success can be rewritten as **not sure I've got the notation of S correct**
 
 $$R(t, S) = \frac{400e^{t/L}}{(1 + e^{t/L})^2} + S(t)n$$
-where $S(t)$ describes the importance of spermatophores at a resource at time $t$ and $n$ is the number of spermatophores ingested by the female (essentially a Bateman gradient). 
+where $S(t)$ describes the importance of spermatophores as a resource at time $t$ and $n$ is the number of spermatophores ingested by the female (essentially a Bateman gradient). 
 
 $$S(t) = \alpha(100 - \frac{400e^{t/L}}{(1 + e^{t/L})^2})$$
 The $\alpha$ parameter controls the magnitude of fecundity increase attributed to the spermatophore, relative to resources available via other paths. If $\alpha = 1$ (note this is unrealistically large), each spermatophore consumed when no other resources are available provides the same benefit to fecundity as does timing reproduction perfectly with the temporal resource peak. The second term in the equation moderates the Bateman gradient such that the effect of resource availability on fecundity negatively correlates with the effect of spermatophore consumption on fecundity. When $t = 0$ this second term equals zero i.e. there are no fecundity benefits from spermatophore ingestion.  
