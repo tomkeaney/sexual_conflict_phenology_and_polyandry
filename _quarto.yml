@@ -31,5 +31,7 @@ format:
       embed-resources: false # output doc contains all info needed to display html. Needs to be false for shiny
       #fig-format: svg
       grid: 
-        body-width: 1400px   
+        body-width: 1400px
+      resources: 
+        - shinylive-sw.js
   
