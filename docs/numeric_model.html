@@ -305,7 +305,6 @@ window.Quarto = {
 library(shiny)
 library(dplyr)
 library(ggplot2)
-library(MoMAColors)
 
 # Define the UI
 ui &lt;- fluidPage(
@@ -359,7 +358,7 @@ server &lt;- function(input, output) {
     # Create a plot based on the reactive data
     data %&gt;% 
       ggplot(aes(x = t, y = Emergence)) +
-      geom_line(alpha = 0.8, linewidth = 1.4, colour = moma.colors("Exter", n =5, override_order = TRUE)[5]) +
+      geom_line(alpha = 0.8, linewidth = 1.4, colour = "#d9402a") +
       #scale_color_gradientn(colors=moma.colors("Exter", n =5, override_order = TRUE)) +
       labs(y = "Prop. individuals emerging/arriving",
            x = "Time, t") +

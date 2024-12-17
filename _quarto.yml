@@ -30,8 +30,8 @@ format:
       smooth-scroll: true 
       embed-resources: false # output doc contains all info needed to display html. Needs to be false for shiny
       #fig-format: svg
-      #grid: 
-       # body-width: 1400px
+      grid: 
+        body-width: 1000px
       resources: 
         - shinylive-sw.js
   
