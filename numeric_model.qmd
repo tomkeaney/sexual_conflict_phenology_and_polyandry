@@ -72,12 +72,11 @@ I understand how equations work a lot better after plotting them. For some value
 
 ```{shinylive-r}
 #| standalone: true
-#| viewerHeight: 400
+#| viewerHeight: 600
 
 # Load required libraries
 library(shiny)
 library(dplyr)
-library(tidyr)
 library(ggplot2)
 
 # Define the UI
@@ -117,7 +116,7 @@ server <- function(input, output) {
     T_i <- input$T_value
     
     # Sample computation, replace this with your own calculation
-    data <- expand_grid(t = seq(from = -8, to = 8, by = 0.01)) %>% 
+    data <- tibble(t = seq(from = -8, to = 8, by = 0.01)) %>% 
   mutate(Emergence = exp(t - T_i)/(1 + exp(t - T_i))^2) 
     
     

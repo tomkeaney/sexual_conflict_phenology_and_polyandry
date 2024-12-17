@@ -299,12 +299,11 @@ window.Quarto = {
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
 #| standalone: true
-#| viewerHeight: 400
+#| viewerHeight: 600
 
 # Load required libraries
 library(shiny)
 library(dplyr)
-library(tidyr)
 library(ggplot2)
 
 # Define the UI
@@ -344,7 +343,7 @@ server &lt;- function(input, output) {
     T_i &lt;- input$T_value
     
     # Sample computation, replace this with your own calculation
-    data &lt;- expand_grid(t = seq(from = -8, to = 8, by = 0.01)) %&gt;% 
+    data &lt;- tibble(t = seq(from = -8, to = 8, by = 0.01)) %&gt;% 
   mutate(Emergence = exp(t - T_i)/(1 + exp(t - T_i))^2) 
     
     
