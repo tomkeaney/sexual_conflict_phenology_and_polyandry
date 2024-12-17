@@ -28,5 +28,8 @@ format:
       toc-title: "Sections" 
       code-fold: true # fold code up for neater display
       smooth-scroll: true 
-      embed-resources: true # output doc contains all info needed to display html
+      embed-resources: false # output doc contains all info needed to display html. Needs to be false for shiny
       #fig-format: svg
+      grid: 
+        body-width: 1400px   
+  
