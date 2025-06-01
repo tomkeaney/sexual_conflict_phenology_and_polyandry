@@ -3,13 +3,11 @@ project:
   output-dir: docs
 
 website:
-  title: "Sexual conflict, phenology and polyandry"
+  title: "Protandry, polyandry and OSR flipping"
   navbar:
     left:
       - href: notes.qmd
         text: Project meeting notes
-      - href: numeric_model.qmd
-        text: Numeric progress
       - href: simulation.qmd
         text: Simulation progress
 

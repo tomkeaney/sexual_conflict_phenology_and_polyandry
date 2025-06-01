@@ -1,14 +1,781 @@
 ---
-title: "Simulation - if required"
+title: "Simulation"
 format: html
+execute:
+  warning: false
+  message: false
 ---
 
 ## Load packages
 
 ```{r}
 library(tidyverse)
+library(geomtextpath)
 library(MoMAColors)
+library(PNWColors)
+library(bench)
+library(patchwork)
+
+sensible_sample <- function(x, ...){x[sample(length(x), ...)]}
+
 ```
+
+## Build helpful functions
+
+### Emergence
+
+```{r}
+emergence_sample <- function(emergence_breeding_value, p){
+# T is the emergence breeding value  
+# we take advantage of the fact that the cumulative distribution of the emergence time is exp(t)/(exp(t)+exp(T)), 
+# hence the t that corresponds to a uniformly distributed p is ln(exp(T) p/(1-p)) = ln(exp(T))+ln(p/(1-p)) = T+ln(p/(1-p))
+
+#p <- runif(length(emergence_breeding_value))
+emergence_breeding_value+log(p/(1-p))
+}
+```
+
+### Resource abundance
+
+How resources increase with time is described by the logistic growth function
+
+$$R(t) = \frac{1}{1 + e^{-(t - t_0)}}$$ 
+where $t_0$ is the $t$ value of the functions midpoint. The function saturates at 1, which indicates the point where female fecundity is no longer limited by resource abundance. Here's what it looks like for different values of $t_0$.
+
+```{r}
+expand_grid(t = seq(from = -20, to = 20, by = 0.1),
+       t0 = seq(from = -10, to = 6, by = 1)) %>% 
+  mutate(resources = 1/(1 + exp(-1*(t - t0))),
+         resources = case_when(t > 5 ~ NaN,
+                               .default = resources)) %>% 
+  ggplot(aes(x = t, y = resources)) +
+  geom_vline(xintercept = 5, linetype = 2, linewidth = 1) +
+  geom_line(aes(colour = t0, group = t0), linewidth = 1.5) +
+  scale_color_moma_c("Panton") +
+  scale_x_continuous(limits = c(-15, 6), expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "Time, t",
+       y = "Resource abundance",
+       colour = "t0") +
+  theme_bw() +
+  theme(text = element_text(size = 16))
+```
+
+**Build the helper function**
+
+$R(t)$ describes how resources flow into the system as time passes. Under the simplifying assumptions that spermatophore size is fixed across the population and that resource acquisition is independent of conspecifics, the male refractory period is $x-T$, where $T$ is the time during the season when a male starts building a spermatophore and $x$ is the time-point at which he has gathered sufficient resources to produce a complete spermatophore. We calculate spermatophore production between two points in the season as 
+$$
+A = \int_{T}^{x} \frac{1}{c_\mathrm{m} + e^{-(t - t_0)}} \,dt 
+$$ 
+where $c_\mathrm{m}$ controls how efficiently males convert available resources into spermatophore. When $c_\mathrm{m}$ is small, spermatophore production is efficient/cheap. We set the necessary amount of resources required to complete a spermatophore to $A = 1$ and for a given value of $T$ find males return to the mating pool at time
+
+$$
+x = \mathrm{Log}[\frac{c_\mathrm{m}e^{(T+c_\mathrm{m})}+e^{(t_0+c_\mathrm{m})}-e^{t_0}}{c_\mathrm{m}}]
+$$
+
+::: callout-tip
+## An alternative
+
+$R(t)$ describes how resources flow into the system as time passes. Let the speed at which males convert available resources into spermatophore be governed by the constant $c$, such that the male refractory period is $r_\mathrm{m}(R) = cT_Be^{-kR}+r_0$, where $T_B$ is the length of the breeding season (**this is L in Hanna's model**), $r_0$ is the time required to build a spermatophore at the resource peak, and $k$ determines the rate at which the refractory decreases with an increase in resources.
+:::
+
+Resource availability has the opposite effect on the female refractory period. We assume that females use the resources available to them immediately after mating to produce eggs, which they then spend time out of the mating pool ovipositing. Females lay eggs at a population-wide constant rate; the time spent out of the mating pool is therefore determined by the number of eggs they were able to produce immediately after mating. Longer refractory periods result from having a greater number of eggs to lay. Females also acquire resources from the spermatophore they receive during mating, which provides an additive 'bump' to the resources they have at their disposal. The efficiency at which females convert resources into eggs is controlled by the constant $c_\mathrm{f}$, such that the female refractory is $r_\mathrm{f}=c_\mathrm{f}(R(t) + s)$, where $s$ is a population-wide constant that controls the nutritional content of the spermatophore. Any values of $R(t) + s$ that exceed 1 are reset to 1; the value where female fecundity is no longer limited by resources.
+
+Set $c_\mathrm{f}$ = 5, $c_\mathrm{m}$ = 1, $s$ = 0 and $t_0$ = -5 and plot
+
+```{r}
+#| fig-height: 8
+panel_1 <- 
+  expand_grid(t = seq(from = -20, to = 20, by = 0.1),
+       t0 = -5) %>% 
+  mutate(resources = 1/(1 + exp(-1*(t - t0))),
+         resources = case_when(t > 5 ~ NaN,
+                               .default = resources)) %>% 
+  ggplot(aes(x = t, y = resources)) +
+  geom_vline(xintercept = 5, linetype = 2, linewidth = 1) +
+  geom_line(linewidth = 1) +
+  #scale_color_moma_c("Panton") +
+  scale_x_continuous(limits = c(-15, 6), expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0.005, 0.005)) +
+  labs(x = "Time, t",
+       y = "Resource abundance") +
+  theme_bw() +
+  theme(text = element_text(size = 16),
+        legend.position = "none")
+
+panel_2 <-
+expand_grid(t = seq(from = -20, to = 20, by = 0.1),
+       t0 = seq(from = -6, to = 10, by = 1),
+       cm = 1,
+       fm = 5) %>% 
+  mutate(male_timeout = (log(exp(cm+t0)+exp(cm+t) - exp(t0))/cm)-t,
+         female_timeout = (fm/(1 + exp(-1*(t - t0)))),
+         male_timeout = case_when(t > 5 ~ NaN,
+                               .default = male_timeout),
+         female_timeout = case_when(t > 5 ~ NaN,
+                               .default = female_timeout)) %>% 
+  filter(t0 == -5) %>% 
+  ggplot(aes(x = t)) +
+  geom_textline(aes(y = male_timeout, label = "Males"), size = 6, hjust = 0.4) +
+  geom_textline(aes(y = female_timeout, label = "Females"), size = 6, hjust = 0.12) +
+  scale_x_continuous(limits = c(-15, 6), expand = c(0, 0)) +
+  geom_vline(xintercept = 5, linetype = 2, linewidth = 1) +
+  scale_y_continuous(expand = c(0.005, 0.005)) +
+    labs(x = "Time, t",
+       y = "Time out (mean expectation)") +
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12,
+                                14, 16, 18, 20)) +
+  theme_bw() +
+  theme(text = element_text(size = 16))
+
+panel_1 / panel_2 + plot_layout(axes = "collect")
+```
+
+Build the refractory functions for the simulation
+
+```{r}
+# this doesn't find refractory period, but rather the time the male re-enters the mating pool
+get_male_time_in <- function(c_m, t, t0){
+  log((c_m*exp(c_m+t) - exp(t0) + exp(c_m + t0))/c_m) 
+}
+
+# females acquire resources via flowers and spermatophores 
+
+get_female_resource_quantity <- function(t, t0, s){
+  R_t <- (1/(1 + exp(-1*(t - t0)))) + s
+  
+  if(R_t > 1){R_t <- 1}
+  
+  R_t
+}
+
+```
+
+### Fitness
+
+The quantity maximised by selection on both sexes is lifetime reproductive success. For females, this is equivalent to the total time they spend in time-out, ovipositing eggs. We treat eggs like tickets in a lottery, and draw mothers for adults in the next generation, weighted by the number of 'tickets' each female has. The relevant lottery is density-dependent viability selection, which we assume to occur prior to the reproductive life-stage, with each egg having equal probability of making it. 
+
+For males, reproductive success depends on mating success, the fecundity of a male's mates and the intensity of sperm competition the male faces within each female he inseminates. We model sperm competition under complete sperm-mixing, where a single mating is sufficient to fill the spermatheca. Specifically, when a female mates with a second male, she dumps half of the total sperm she has received randomly (as she has received enough to fill her spermatheca twice-over), such that her spermatheca now contains equal parts of male one and male two's ejaculate. If she mates a third time, she again dumps half the sperm, such that male three contributes half the present sperm, and male one and male two's representation is reduced to a quarter. A female's recent mates therefore have the highest chance of siring her offspring. To put this in perspective, a male's probability of fathering offspring from a given reproductive bout reduces to ~0.01 if the female has subsequently mated six more times. For completeness, we consider cases where females have mated up to 15 times, though this rarely if ever occurs in simulations.     
+
+```{r}
+# get total length of time each mating caused a female to leave mating pool == LRS 
+
+# we assume complete sperm-mixing and that one insemination event fills the spermatheca
+
+# columns are how polyandrous a female has been
+# rows hold the mating partner's paternity prob, which depends on how many times the female has subsequently mated 
+
+sperm_comp_weights <-
+  data.frame(Mating1 = c(1, rep(0, 14)),
+         Mating2 = c(0.5, 0.5, rep(0, 13)),
+         Mating3 = c(0.5^2, 0.5^2, 0.5, rep(0, 12)),
+         Mating4 = c(0.5^3, 0.5^3, 0.5^2, 0.5, rep(0, 11)),
+         Mating5 = c(0.5^4, 0.5^4, 0.5^3, 0.5^2, 0.5, rep(0, 10)),
+         Mating6 = c(0.5^5, 0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5, rep(0, 9)),
+         Mating7 = c(0.5^6, 0.5^6, 0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5, rep(0, 8)),
+         Mating8 = c(0.5^7, 0.5^7, 0.5^6, 0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5, rep(0, 7)),
+         Mating9 = c(0.5^8, 0.5^8, 0.5^7, 0.5^6, 0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5,
+                     rep(0, 6)),
+         Mating10 = c(0.5^9, 0.5^9, 0.5^8, 0.5^7, 0.5^6, 0.5^5, 0.5^4, 0.5^3, 0.5^2,
+                      0.5, rep(0, 5)),
+         Mating11 = c(0.5^10, 0.5^10, 0.5^9, 0.5^8, 0.5^7, 0.5^6, 0.5^5, 0.5^4, 0.5^3,
+                      0.5^2, 0.5, rep(0, 4)),
+         Mating12 = c(0.5^11, 0.5^11, 0.5^10, 0.5^9, 0.5^8, 0.5^7, 0.5^6, 0.5^5,
+                      0.5^4, 0.5^3, 0.5^2, 0.5, rep(0, 3)),
+         Mating13 = c(0.5^12, 0.5^12, 0.5^11, 0.5^10, 0.5^9, 0.5^8, 0.5^7, 0.5^6,
+                      0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5, rep(0, 2)),
+         Mating14 = c(0.5^13, 0.5^13, 0.5^12, 0.5^11, 0.5^10, 0.5^9, 0.5^8, 0.5^7,
+                      0.5^6, 0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5, rep(0, 1)),
+         Mating15 = c(0.5^14, 0.5^14, 0.5^13, 0.5^12, 0.5^11, 0.5^10, 0.5^9, 0.5^8,
+                      0.5^7, 0.5^6, 0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5))
+
+# mother function
+
+mother_finder_function <- 
+  function(fecundity_matrix, # holds times for reproductive bouts
+           carrying_capacity){ # holds times when females end each egg-laying bout
+    
+    # find mothers
+    # get likelihoods for mothering success
+    probs <- rowSums(fecundity_matrix, na.rm = T)/sum(fecundity_matrix, na.rm = T)
+    # find mothers of the next generation
+    mothers <- sensible_sample(x = 1:carrying_capacity, size = carrying_capacity, prob = probs, replace = T) 
+    
+    mothers
+    
+    # sanity check - are all mothers female? 
+    
+    #if(setdiff(mothers, pop %>% filter(sex == 0) %>% pull(ID))>0){ # should return 0
+    #  print("some mothers are male!")
+    #} 
+  }
+
+# father function
+
+father_finder_function <- 
+  function(mothers, # from mother finder function
+           fecundity_matrix,
+           mates,
+           sperm_comp_array){ # how does sperm comp work
+    
+    fathers <- rep("NaN", length(mothers))
+    offspring <- 1 # pick a father for the first adult in the next gen; iterate through all individuals
+    # empty vector to be filled; females assumed to have mated a max of 15 times
+    fecundity_weights <- c(rep(0, nrow(sperm_comp_array)))
+    
+    while(offspring <= length(mothers)){
+      # no. of mates
+      number_mates <- sum(!is.na(mates[mothers[offspring], ]))
+      # who are the mates
+      mate_IDs <- mates[mothers[offspring], 1:number_mates]
+      
+      if(number_mates > 1){
+        fecundity_weights[1:number_mates] <- 
+          fecundity_matrix[mothers[offspring], 1:number_mates] / 
+          sum(fecundity_matrix[mothers[offspring], 1:number_mates])
+        
+        paternity_weights <-
+          rowSums(data.frame(mapply(`*`,sperm_comp_array,fecundity_weights)))
+        
+        father <- sensible_sample(mate_IDs, size = 1, prob = paternity_weights[1:number_mates])
+      }else{father <- mate_IDs}
+      
+      fathers[offspring] <- father
+      
+      offspring <- offspring + 1
+      
+    }
+    
+    fathers
+  }
+
+```
+
+## Define parameter space
+
+```{r}
+
+# what should vary:
+# shared_loci: YES, NO
+# v = c(10, 100, 1000)
+# t0 = c(-10, -5, 0, -5)
+#c_f = c(1, 2, 3, 4, 5)
+# c_m = c(0, 1, 2, 3, 4, 5)
+# a = c(0:1)
+
+parameter_space <- 
+  tibble(popsize = 500,
+         mu_f_in = 0.1,
+         mu_f_out = 0.1,
+         mu_m_in = 0.1,
+         mu_m_out = 0.1,
+         v = 10/(popsize / 2), # rate searching sex finds other sex
+         c_m = 1, # min time unit to regen spermatophore
+         c_f = 3, # max time units of eggs can be produced
+         s = 0.2, # spermatophore boost
+         t0 = -5, # resource peak is very close to time 0
+         genome_wide_mutation = 0.1, # sd for normal with mu = 0
+         heatwave_time = 5,
+         gens = 20000)  # when are all the adults killed each year
+```
+
+## The main simulation function
+
+```{r}
+main_sim <- function(row, # which row of the parameter space
+                     input, # the parameter space
+                     sex_limited, # -1 = no, +1 = yes
+                     OSR_recording_interval # time points to record OSR
+){
+  
+  # define constants
+  popsize <- parameter_space$popsize[row] 
+  mu_f_in <- parameter_space$mu_f_in[row] # female death rate in mating pool
+  mu_f_out <- parameter_space$mu_f_out[row] # female death rate out of the mating pool
+  mu_m_in <- parameter_space$mu_m_in[row] # male death rate in the mating pool
+  mu_m_out <- parameter_space$mu_m_out[row] # mating death rate out of the mating pool
+  v <- parameter_space$v[row] # velocity of male mate searching - all males have same value
+  c_m <- parameter_space$c_m[row]
+  c_f <- parameter_space$c_f[row]
+  s <- parameter_space$s[row]
+  t0 <- parameter_space$t0[row]
+  genome_wide_mutation <- parameter_space$genome_wide_mutation[row]
+  heatwave_time <- parameter_space$heatwave_time[row]
+  gens <- parameter_space$gens[row]
+  
+  # initialise the population
+  # each generation fill the table with breeding values, emergence times and death times
+  
+  if(sex_limited < 1){ # we only need to track one trait
+    
+    population_attributes <-
+      data.frame(sex = rbinom(popsize, 1, prob = 0.5), # 0 is female, +1 is male
+                 breeding_value = rnorm(popsize, mean = 0, sd = 1),
+                 state = Inf,
+                 p = runif(popsize)) %>% 
+      mutate(emergence_time = emergence_sample(breeding_value, p)) %>% # get emergence time
+      arrange(emergence_time) %>% # order by emergence time to make downstream operations faster
+      mutate(ID = 1:popsize) # set ID for each individual
+    
+    pop <-
+      population_attributes %>% 
+      select(-c(p, breeding_value)) # remove un-needed columns
+    
+    genetics <- 
+      population_attributes %>% 
+      select(ID, breeding_value)
+    
+  } else{ # we need to track two traits
+    population_attributes <-
+      data.frame(sex = rbinom(popsize, 1, prob = 0.5), # 0 = female, +1 = male
+                 f_limited_bv = rnorm(popsize, mean = 0, sd = 1), 
+                 m_limited_bv = rnorm(popsize, mean = 0, sd = 1),  
+                 state = Inf,
+                 p = runif(popsize)) %>% 
+      # get emergence time
+      mutate(emergence_time = case_when(sex > 0 ~ emergence_sample(m_limited_bv, p),
+                                        sex < 1 ~ emergence_sample(f_limited_bv, p))) %>% 
+      arrange(emergence_time) %>% # order by emergence time to make downstream operations faster
+      mutate(ID = 1:popsize) # set ID for each individual
+    
+    pop <-
+      population_attributes %>% 
+      select(-c(contains("bv"), p)) # remove un-needed columns
+    
+    genetics <- 
+      population_attributes %>% 
+      select(ID, f_limited_bv, m_limited_bv)
+  }
+  
+  # for state: 
+  # NaN: in mating pool, 
+  # real number: time out with number indicating when they'll return 
+  # Inf: dead or yet to emerge
+  
+  # setup array to record results every generation
+  mean_trait_value <- matrix(NaN, ncol = 4, nrow = length(0:gens))
+  
+  OSR_list <- list(rep(NaN, length(0:gens)))
+  
+  # simulate evolution over many generations - within each generation, fitness is accrued during the breeding season, which we simulate with a gillespie-like process of events 
+  G <- 0  
+  
+  while(G <= gens){  
+    
+    print(paste("running generation", G))
+    
+    # record mean breeding value in the population before selection
+    # genetic variance in trait values
+    if(sex_limited > 0){
+      mean_trait_value[G+1,1] <- mean(genetics$f_limited_bv) # f
+      mean_trait_value[G+1,2] <- sd(genetics$f_limited_bv) # f
+      mean_trait_value[G+1,3] <- mean(genetics$m_limited_bv) # m
+      mean_trait_value[G+1,4] <- sd(genetics$m_limited_bv) # m
+    } else{
+      mean_trait_value[G+1,1] <- mean(genetics$breeding_value) # both
+      mean_trait_value[G+1,2] <- sd(genetics$breeding_value) # both
+    }
+    
+    # setup within gen necessities  
+    
+    #Mating_limit_exceeded <- "NO" # this will change to YES if a female mates more than 15 times, exceeding the limit we can track 
+    
+    # create an empty array to hold female mating times 
+    # we assume that females can't mate more than 15 times across the season
+    female_out_times <- matrix(NaN, nrow = popsize, ncol = 15)
+    # and another that holds the male they mated with
+    female_mating_partners <- matrix(NaN, nrow =  popsize, ncol = 15)
+    
+    if(pop[1, 3] < -10){ 
+    t <- pop[1, 3] - 0.0001 # start tracking the population just before first emergence
+    } else{t <- -10} # start sim here at the latest
+    
+    alive <- popsize # a stop early condition if everyone dies before the heatwave
+    
+    # we record the OSR at regular intervals
+    next_OSR <- -10 # initial recording
+    
+    OSR <- matrix(NaN, ncol = 2, 
+                  nrow = (OSR_recording_interval^-1)*length(next_OSR:heatwave_time))
+    OSR_row <- 1 # keep track of which row to update
+    
+    #event_counter <- 0 # cut eventually
+    
+    while(t < heatwave_time & # the timepoint when the heatwave kills all the adults
+          alive > 0){ # stop early if everyone dies before the heatwave
+      # gillespie through the events, tracking state changes
+      
+      # find individuals out of the mating pool
+      # used to calculate next return to mating pool and death times 
+      outfemales <- pop[pop$sex < 1 & is.finite(pop$state),]
+      outmales <- pop[pop$sex > 0 & is.finite(pop$state),]
+      # find individuals in the mating pool 
+      # used to find the next potential mating and death times
+      infemales <- pop[pop$sex < 1 & is.na(pop$state),]
+      inmales <- pop[pop$sex > 0 & is.na(pop$state),]
+      
+      # find next event
+      
+      # emergence - remove past and select next one - pre-ordering makes this easy
+      next_emergence <- pop[pop$emergence_time > t, "emergence_time"][1]
+      
+      # time in - Inf and NaN are possible options that the code can handle 
+      next_time_in <- min(pop$state, na.rm = T)
+      
+      # matings... if rate is 0, NaN produced.
+      pop_matingrate <- v*nrow(infemales)*nrow(inmales)
+      next_mating <- t + rexp(n = 1, rate = pop_matingrate)
+      
+      # death... if rate is 0, NaN produced.
+      death_rate <- 
+        mu_f_out*nrow(outfemales) +
+        mu_f_in*nrow(infemales) +
+        mu_m_out*nrow(outmales) +
+        mu_m_in*nrow(inmales)
+      
+      next_death <- t + rexp(n = 1, rate = death_rate)
+      
+      # find the next event and update t
+      t <- pmin(next_emergence,
+                next_time_in,
+                next_mating,
+                next_death,
+                next_OSR,
+                heatwave_time,
+                na.rm = TRUE) # ... if a rate is 0, NaN produced.
+      
+      # record OSR
+      if(t == next_OSR & !is.na(next_OSR)){
+        OSR[OSR_row,1] <- nrow(infemales)
+        OSR[OSR_row,2] <- nrow(inmales)
+        next_OSR <- next_OSR + OSR_recording_interval # record OSR at specified time interval
+        OSR_row <- OSR_row + 1
+      }
+      
+      # update the population by changing the states of individuals
+      
+      # following emergence, initial state depends on sex 
+      if(t == next_emergence & !is.na(next_emergence)){
+        # who is it
+        # because ID is ordered by emergence, select first row after filtering out old events
+        emergence_ID <- pop[pop$emergence_time >= t, "ID"][1]
+        
+        if(pop[pop$ID == emergence_ID,]$sex > 0){ # if male, find time male enters mating pool
+          pop[emergence_ID, "state"] <- get_male_time_in(c_m, t, t0)
+        } else{pop[emergence_ID, "state"] <- NaN} # if female, start in time-in
+      }
+      
+      # if the next event is a mating
+      if(t == next_mating & !is.na(next_mating)){
+        # see who mates
+        # everyone searches at the same rate 
+        # so within sexes, all time-in individuals have the same probability of mating
+        # that means we can randomly sample one female and one male from the mating pool
+        who_mates_female <- sensible_sample(infemales$ID, 1)
+        who_mates_male <- sensible_sample(inmales$ID, 1)
+        # get_female_resource_quantity and calculate refractory period
+        R_f <- get_female_resource_quantity(t, t0, s) # use pre-defined function
+        f_refract_period <- R_f*c_f
+        # change state to time-out = real numbers
+        pop[who_mates_female, "state"] <- t + f_refract_period
+        pop[who_mates_male, "state"] <- get_male_time_in(c_m, t, t0)
+        # now update the female LRS table
+        # modify the recorded refractory period if egg-laying gets cut short by heatwave
+        if(f_refract_period + t > heatwave_time){ 
+          f_refract_period <- heatwave_time - t
+        }
+        # work out how many past repro bouts the newly mated female has had
+        # ID is the same as row number - females can thus be searched by row number
+        # for a specific row, we need to find the next column that has an NaN value
+        #e.g. if a female has mated 3 times previously, the next NaN will be in column 4
+        repro_bout <- which(is.nan(female_out_times[who_mates_female, ]))[1]
+        # Replace the next NaN in the row that corresponds to the appropriate female
+        female_out_times[who_mates_female, repro_bout] <- f_refract_period
+        female_mating_partners[who_mates_female, repro_bout] <- who_mates_male # record mate
+      }
+      
+      # if the next event is a return to mating pool
+      if(t == next_time_in & !is.na(next_time_in)){
+        # find who it is and change state to time-in
+        pop[which.min(pop$state), "state"] <- NaN
+      }
+      
+      # if the next event is a death, who dies
+      if(t == next_death & !is.na(next_death)){
+        who_dies <- NA # make sure this resets
+        out_f_weight <- (mu_f_out*nrow(outfemales))/death_rate
+        in_f_weight <- (mu_f_in*nrow(infemales))/death_rate
+        out_m_weight <- (mu_m_out*nrow(outmales))/death_rate
+        in_m_weight <- (mu_m_in*nrow(inmales))/death_rate
+        # which class does the death come from?
+        death_class <- 
+          sensible_sample(c("out_f", "in_f", "out_m", "in_m"),
+                 size = 1, 
+                 prob = c(out_f_weight, in_f_weight, out_m_weight, in_m_weight))
+        # all individuals within class have same death rate, choose 1 at random
+        if(death_class == "out_f"){
+          who_dies <- sensible_sample(outfemales$ID, 1)
+          # end the egg laying period prematurely
+          repro_bout_mu <- which(is.nan(female_out_times[who_dies, ]))[1] - 1 # find first NA, then go back a col
+          # subtract the time lost due to death from existing refractory period
+          if(pop$state[who_dies] > 5){
+            female_out_times[who_dies, repro_bout_mu] <- 
+              female_out_times[who_dies, repro_bout_mu] - (heatwave_time - t)
+          } else{female_out_times[who_dies, repro_bout_mu] <- 
+            female_out_times[who_dies, repro_bout_mu] - (pop$state[who_dies] - t)
+          }
+        }
+        if(death_class == "in_f"){
+          who_dies <- sensible_sample(infemales$ID, 1)}
+        if(death_class == "out_m"){
+          who_dies <- sensible_sample(outmales$ID, 1)}
+        if(death_class == "in_m"){
+          who_dies <- sensible_sample(inmales$ID, 1)}
+        # change state
+        pop[who_dies, "state"] <- Inf
+      }
+      
+      # count individuals that haven't died
+      alive <- nrow(pop[pop$state != Inf | pop$emergence_time > t,]) 
+      #event_counter <- event_counter + 1
+      #print(paste("t =", round(t, 3), "event no. =", event_counter, 
+      #           "no. ind alive =", alive))
+      
+    } # end within generation while loop
+    
+    #print(paste("Mating limit exceeded:", Mating_limit_exceeded))
+    
+    # once the season is complete, compute fecundity and male paternity 
+    # from this we determine which breeding values are transmitted to the next generation
+    # length of time for each reproductive bout == fecundity 
+    
+    # find the mothers using our pre-written function
+    mothers <- mother_finder_function(female_out_times, 
+                                      popsize)  
+    
+    # find the fathers using our pre-written function
+    fathers <- father_finder_function(mothers, 
+                                      female_out_times, 
+                                      female_mating_partners,
+                                      sperm_comp_weights)
+    
+    # setup adults in the next generation
+    
+    if(sex_limited > 0){ # two traits need to be tracked
+      next_gen <- 
+        cbind(as.data.frame(mothers), as.data.frame(fathers)) %>%
+        merge(genetics, by.x = "mothers", by.y = "ID") %>% 
+        merge(genetics, by.x = "fathers", by.y = "ID",
+              suffixes = c(".mother", ".father")) %>% 
+        mutate(f_limited_bv = (f_limited_bv.mother + f_limited_bv.father)/2 +
+                 rnorm(popsize, mean = 0, sd = genome_wide_mutation),
+               m_limited_bv = (m_limited_bv.mother + m_limited_bv.father)/2 +
+                 rnorm(popsize, mean = 0, sd = genome_wide_mutation),
+               sex = rbinom(popsize, 1, prob = 0.5), # 0 is female, +1 is male
+               state = Inf,
+               p = runif(popsize), 
+               # get emergence times
+               emergence_time = 
+                 case_when(sex > 0 ~ emergence_sample(m_limited_bv, p),
+                           sex < 1 ~ emergence_sample(f_limited_bv, p))) %>%
+        arrange(emergence_time) %>% # order by emergence time to streamline later operations
+        mutate(ID = 1:popsize) # set ID for each individual
+      
+      pop <-
+        next_gen %>% 
+        select(sex, state, emergence_time, ID) # remove un-needed columns
+      
+      genetics <- 
+        next_gen %>% 
+        select(ID, f_limited_bv, m_limited_bv)
+    } else{ # one trait needs to be tracked 
+      next_gen <- 
+        cbind(as.data.frame(mothers), as.data.frame(fathers)) %>%
+        merge(genetics, by.x = "mothers", by.y = "ID") %>% 
+        merge(genetics, by.x = "fathers", by.y = "ID",
+              suffixes = c(".mother", ".father")) %>% 
+        mutate(breeding_value = (breeding_value.mother + breeding_value.father)/2 +
+                 rnorm(popsize, mean = 0, sd = genome_wide_mutation),
+               sex = rbinom(popsize, 1, prob = 0.5), # 0 is female, +1 is male
+               state = Inf,
+               p = runif(popsize), 
+               # get emergence times
+               emergence_time = emergence_sample(breeding_value, p)) %>%
+        arrange(emergence_time) %>% # order by emergence time to streamline later operations
+        mutate(ID = 1:popsize) # set ID for each individual
+      
+      pop <-
+        next_gen %>% 
+        select(sex, state, emergence_time, ID) # remove un-needed columns
+      
+      genetics <- 
+        next_gen %>% 
+        select(ID, breeding_value)
+    }
+    
+    # record OSR across season
+    OSR_list[[G+1]] <- OSR
+    
+    
+    # update the generation counter 
+    G <- G + 1
+    
+  }
+  
+  results <- list(mean_trait_value, OSR_list)
+  
+  results
+}
+```
+
+## Run the simulation
+
+```{r}
+
+if(file.exists("results/test.rds")){test <- read_rds("results/test.rds")
+}else{test <-
+  main_sim(row = 1,
+           input = parameter_space,
+           sex_limited = 1,
+           OSR_recording_interval = 0.5)
+write_rds(test, "results/test.rds")
+}
+
+```
+
+## Plotting a single example
+
+### The evolution of protandry across many generations
+
+```{r, fig.height=8}
+
+plotting_data <-
+  test[1] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  rename(Female_mu = X1,
+         Female_sd = X2,
+         Male_mu = X3,
+         Male_sd = X4) %>% 
+  mutate(Generation = 0:20000) %>% 
+  pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
+  separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
+  pivot_wider(names_from = Measure, values_from = emergence_time) 
+
+p1<-
+  plotting_data %>% 
+  ggplot(aes(x = Generation, y = mu, group = Sex, colour = Sex)) +
+  geom_line() +
+  scale_colour_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
+                                 pnw_palette("Sunset2", n = 5)[4])) +
+  labs(y = "Mean emergence time breeding value",
+       colour = "Sex") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p2<-
+  plotting_data %>% 
+  ggplot(aes(x = Generation, y = sd, group = Sex, colour = Sex)) +
+  geom_line() +
+  scale_colour_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
+                                 pnw_palette("Sunset2", n = 5)[4])) +
+  labs(y = "Standard deviation in emergence breeding value",
+       colour = "Sex") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p1 / p2 + plot_layout(axis_titles = "collect")
+  
+```
+
+### The evolution of the OSR across many generations 
+
+```{r}
+
+OSR_data <-
+  test[2] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  mutate(Time = seq(from = -10, to = 5.5, by = 0.5)) %>% 
+  pivot_longer(cols = !last_col(), 
+               names_to = "class", 
+               values_to = "Individuals") %>% 
+  separate(class, into = c("place", "generation"), sep = "\\.") %>% 
+  mutate(sex = case_when(str_detect(place, "X1") ~ "Female",
+                         .default = "Male"),
+         generation = if_else(is.na(generation), "0", generation),
+         generation = as.numeric(generation)) %>%
+  select(-place) %>% 
+  filter(Time != 5.5) %>% 
+  pivot_wider(names_from = sex, values_from = Individuals)
+
+pal<-pnw_palette("Shuksan2",20)
+
+OSR_data %>% 
+  mutate(OSR = Male / (Male + Female)) %>% 
+  mutate(resources = 1/(1 + exp(-1*(Time - (-5))))) %>% 
+  filter(generation == 0 |
+           generation == 500 |
+           generation == 1000 |
+           generation == 1500 |
+           generation == 2000 |
+           generation == 2500 |
+           generation == 3000 |
+           generation == 3500 |
+           generation == 4000 |
+           generation == 4500 |
+           generation == 5000 |
+           generation == 5500 |
+           generation == 6000 |
+           generation == 6500 |
+           generation == 7000 |
+           generation == 7500 |
+           generation == 8000 |
+           generation == 8500 |
+           generation == 9000 |
+           generation == 9500 |
+           generation == 10000) %>% 
+  ggplot(aes(x = Time, y = OSR, 
+             group = generation, colour= generation)) +
+  #geom_point()+
+  geom_smooth(se = FALSE) +
+  geom_line(aes(y = resources), colour = "black", linetype =2) +
+  labs(y = "OSR (prop. males)",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal) +
+  theme_bw()
+  
+  
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

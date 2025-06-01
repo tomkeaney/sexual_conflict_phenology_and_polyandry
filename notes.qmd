@@ -71,3 +71,13 @@ format: html
 - To model plasticity, we can consider development time as having one of two states, decided by a resource availability threshold. If resources are abundant to the point of exceeding the threshold, females are choosy and thus develop quickly; below the threshold, females compete with other females for matings and therefore develop slowly (or are not selected to mature early).  
 
 - One complication is that resource availability also changes throughout the breeding season - resources are scarce early on and abundant later. This drives within-season plasticity for the sexes.
+
+# 4/3/25
+
+- Tracking female states is really hard numerically, given females can remate so frequently and there's sperm competition. Really what we need to do is track each female's history. That's easiest to do by simulating. 
+
+- Males can be tracked with a time in - time out book keeping system. Time out is determined by the rate at which he can recooperate a spermatophore, which in turn depends on resource availability. That's not as simple as it sounds, as resource availability changes during the recooperation period. We can't just take resource availability at the time of mating. 
+
+- Partitioning paternity is challenging but possible for me. Females mix sperm, with a female's spermatheca depleting at a certain (constant) rate. As new sperm is added take proportions in the spermatheca from the total amount received, not whats existing + a top up.
+
+- Females enter mating pool when they aren't laying eggs. That is, we model them as income breeders. Once eggs from one breeding bout are exhausted, new one's need to be created, leaving time for mating. Perhaps we could assume a constant rate of reproduction when eggs are present, with available resources increasing the length of the egg-laying period and therefore the number of eggs laid. 

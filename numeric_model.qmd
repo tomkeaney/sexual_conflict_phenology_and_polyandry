@@ -44,13 +44,13 @@ library(MoMAColors)
 
 Individuals with trait values $T_\mathrm{F}$ or $T_\mathrm{M}$ display an emergence distribution governed by the equations
 
-$$E_\mathrm{M}(t, T_\mathrm{F}) = \frac{e^{t-T_\mathrm{F}}}{(1 + e^{t - T_\mathrm{F}})^2}$${#eq-EF}
+$$E_\mathrm{F}(t, T_\mathrm{F}) = \frac{e^{t-T_\mathrm{F}}}{(1 + e^{t - T_\mathrm{F}})^2}$${#eq-EF}
 
 $$E_\mathrm{M}(t, T_\mathrm{M}) = \frac{e^{t-T_\mathrm{M}}}{(1 + e^{t - T_\mathrm{M}})^2}$${#eq-EM}
 
 following Zonnevald and Metz (1991) and Ekrem and Kokko (2023).
 
-$E_\mathrm{M}(t, T_\mathrm{F})$ and $E_\mathrm{M}(t, T_\mathrm{M})$ are the numbers of females and males emerging at time *t*.
+$E_\mathrm{F}(t, T_\mathrm{F})$ and $E_\mathrm{M}(t, T_\mathrm{M})$ are the numbers of females and males emerging at time *t*.
 
 I understand how equations work a lot better after plotting them. For some values of *t* and $T_i$ let's see what this function looks like.
 
@@ -73,6 +73,7 @@ I understand how equations work a lot better after plotting them. For some value
 ```{shinylive-r}
 #| standalone: true
 #| viewerHeight: 600
+#| eval: false
 
 # Load required libraries
 library(shiny)
