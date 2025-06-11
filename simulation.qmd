@@ -918,6 +918,36 @@ wrangled_results <-
 
 Plot
 
+first let's have a look at mean emergence time for each sex
+
+```{r}
+heat_map_emergence <-
+  wrangled_results %>% 
+  rename(female = female_mean, male = male_mean) %>% 
+  pivot_longer(cols = female:male, names_to = "sex", values_to = "mean_emergence") %>% 
+  filter(s != 0.1) %>% 
+  ggplot(aes(x = c_f/c_m, y = heatwave_time)) +
+  geom_raster(aes(fill = mean_emergence)) +
+  scale_fill_gradientn(colours = pal) +
+  facet_wrap(sex ~ s, nrow = 2,
+             labeller = label_glue('Sex: {`sex`}\nSpermatophore value: {`s`}')) +
+  labs(x = "Female max time-out / Male max time-out",
+       y = "Time of heatwave\n(length of prosperity)",
+       fill = "Emergence time") +
+  scale_x_continuous(expand = c(0, 0), 
+                     breaks = c(3, 6, 9, 12, 15)) + 
+  scale_y_continuous(expand = c(0, 0)) + 
+  theme(panel.border = element_rect(fill = NA, colour = "black", size = .8),
+        strip.background = element_rect(colour = "black", fill = "Aliceblue", linewidth = .8),
+        strip.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 12))
+
+heat_map_emergence
+```
+
+
 ```{r}
 heat_map_protandry <-
   wrangled_results %>% 
