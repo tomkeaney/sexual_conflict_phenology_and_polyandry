@@ -70,10 +70,12 @@ I understand how equations work a lot better after plotting them. For some value
   theme(axis.title = element_text(size = 14))
 ```
 
-```{shinylive-r}
+```{r}
 #| standalone: true
 #| viewerHeight: 600
 #| eval: false
+
+# shinylive-r
 
 # Load required libraries
 library(shiny)
