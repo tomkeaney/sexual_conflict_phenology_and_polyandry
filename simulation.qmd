@@ -6,6 +6,26 @@ execute:
   message: false
 ---
 
+## Research question and summary of approach
+
+Here, we are interested in whether changes in seasonal resource availability produce adaptive, plastic responses in the length of development of the sex role reversing Bush cricket *K. nartee*. Protandry, where males eclose as adults, or arrive to a breeding site earlier than females has been documented across numerous taxa, including several Bush cricket species ([Simmons et al., 1994](https://www.sciencedirect.com/science/article/abs/pii/S000334728471013X); [Lehmann, 2012](https://link.springer.com/article/10.1186/1742-9994-9-19)). However, it is unknown how the availability of resources during adolescence affects the degree of protandry observed in a system.  
+
+To generate testable predictions, we built an individual-based evolutionary simulation, where male and female emergence time could evolve independently. The simulation tracks a univoltine, gonochoristic population of adults that eclose into an environment where resources temporally increase in abundance. Females are immediately ready to breed upon eclosion, whereas males must first acquire resources, the energy from which they use to produce a spermatophore. As the breeding season progresses, males enter the mating pool and encounter receptive females at a certain rate, which leads to mating events. After mating, a female leaves the mating pool to oviposit fertilised eggs, the number of which depends on the resources currently available in the environment and the nutritional content of the spermatophore she consumed during mating. The female returns to the mating pool once all eggs have been laid. Mated males also leave the mating pool post mating, as they must produce a new spermatophore. Multiply-mated females store sperm from previous matings, producing sperm competition (see the *Fitness* section for details). Throughout the season, both sexes face a constant risk of mortality i.e. due to predation. Finally, the breeding season concludes abruptly, when all adults are killed by a heatwave, as is the case for this species in natural conditions. 
+
+We then simulate the evolution of sex-specific emergence time over many generations (the results shown below are for 2000). The composition of each generation is determined by individual reproductive success in the previous. We assume that the number of eggs laid in a season is far greater than the adult carrying capacity, which we constrain to be a constant $N$, with all eggs equally likely to make it through density-dependent population regulation. Eggs therefore act as 'lottery tickets', with more fecund females and their mating partners holding more tickets (once again, see the *Fitness* section for details). We model emergence time as a quantitative trait determined both by an individual's breeding value and environmental noise, with sex-limited expression. We track the evolution of the mean trait value amongst females and males respectively and quantify the level of protandry as the difference in mean breeding value between the sexes.  
+
+An important point to note is that we do not model plasticity here. Instead, we allow trait values to evolve towards their sex-specific optima for a given resource abundance scenario. Speaking of which, to test how exactly these optima change in response to resource availability, we run a series of simulations, across which we vary the length of the breeding season. Specifically, we shift the timing of the heatwave. At one extreme, the heatwave hits early in the season, when resources are still scarce. At the other, the heatwave hits very late, when ad libitum resources have been available for a considerable amount of time.
+
+If the environment experienced as a juvenile provides a cue for a sex-specific plastic response in emergence time, we expect this to shift sex-specific emergence times towards their phenotypic optima, as predicted by our simulations.
+
+The remainder of this report details exactly how we built our individual-based model and includes all current results. It's broken down into several sections (Emergence, Resource abundance, Fitness and running the simulation proper), within which I've tried to give a fuller description of the relevant process, complete with the biological assumptions we made to get the thing running. 
+
+## Still to do
+
+- I'm confident the simulation runs as intended, know we just need to make sure that my intentions make sense.
+
+- Thus far, I've only run simulations with a constant heatwave time across generations. A logical next step is to see what effect stochastic variation in the heatwave time has on the evolution of emergence time. Hanna and I suspect that bet-hedging will be important here.
+
 ## Load packages
 
 ```{r}
@@ -21,9 +41,7 @@ sensible_sample <- function(x, ...){x[sample(length(x), ...)]}
 
 ```
 
-## Build helpful functions
-
-### Emergence
+## Emergence
 
 ```{r}
 emergence_sample <- function(emergence_breeding_value, p){
@@ -36,12 +54,13 @@ emergence_breeding_value+log(p/(1-p))
 }
 ```
 
-### Resource abundance
+## Resource abundance
 
 How resources increase with time is described by the logistic growth function
 
 $$R(t) = \frac{1}{1 + e^{-k(t - t_0)}}$$ 
-where $t_0$ is the $t$ value of the functions midpoint. The function saturates at 1, which indicates the point where female fecundity is no longer limited by resource abundance. Here's what it looks like for different values of $t_0$, with $k$ = 1.
+
+where $t_0$ is the $t$ value of the functions midpoint and $k$ determines the rate at which resources enter the system. The function saturates at 1, which indicates the point where female fecundity is no longer limited by resource abundance. Here's what it looks like for different values of $t_0$, with $k$ = 1.
 
 ```{r}
 expand_grid(t = seq(from = -20, to = 20, by = 0.1),
@@ -62,13 +81,11 @@ expand_grid(t = seq(from = -20, to = 20, by = 0.1),
   theme(text = element_text(size = 16))
 ```
 
-**Build the helper function**
-
 $R(t)$ describes how resources flow into the system as time passes. Under the simplifying assumptions that spermatophore size is fixed across the population and that resource acquisition is independent of conspecific desnity and behaviour, the male refractory period is $x-T$, where $T$ is the time during the season when a male starts building a spermatophore and $x$ is the time-point at which he has gathered sufficient resources to produce a complete spermatophore. We calculate spermatophore production between two points in the season as 
 $$
 A = \int_{T}^{x} \frac{1}{c_\mathrm{m} + e^{-k(t - t_0)}} \,dt 
 $$ 
-where $k$ determines the rate at which resources enter the system and $c_\mathrm{m}$ controls how efficiently males convert these resources into spermatophore. When $c_\mathrm{m}$ is small, spermatophore production is efficient/cheap. We set the necessary amount of resources required to complete a spermatophore to $A = 1$ and for a given value of $T$ find males return to the mating pool at time
+where $c_\mathrm{m}$ controls how efficiently males convert these resources into spermatophore. When $c_\mathrm{m}$ is small, spermatophore production is efficient/cheap. We set the necessary amount of resources required to complete a spermatophore to $A = 1$ and for a given value of $T$ find males return to the mating pool at time
 
 $$
 x = \frac{kt_0 + \mathrm{Log}[\frac{-1+e^{c_\mathrm{m}k} + c_\mathrm{m}e^{c_\mathrm{m}k + k (T-t_0)}}{c_\mathrm{m}}]}{k}
@@ -159,7 +176,7 @@ get_female_resource_quantity <- function(t, t0, k, s){
 
 ```
 
-### Fitness
+## Fitness
 
 The quantity maximised by selection on both sexes is lifetime reproductive success. For females, this is equivalent to the total time they spend in time-out, ovipositing eggs. We treat eggs like tickets in a lottery, and draw mothers for adults in the next generation, weighted by the number of 'tickets' each female has. The relevant lottery is density-dependent viability selection, which we assume to occur prior to the reproductive life-stage, with each egg having equal probability of making it. 
 
@@ -264,19 +281,19 @@ father_finder_function <-
 ```{r}
 
 parameter_space <- 
-  expand_grid(popsize = 500,
+  expand_grid(popsize = 500, # 1000
               mu_f_in = 0.1,
               mu_f_out = 0.1,
               mu_m_in = 0.1,
               mu_m_out = 0.1,
               v = 8/(popsize / 2), # rate searching sex finds other sex
               c_m = 0.5, # min time to regen spermatophore
-              c_f = seq(from = 0.5, to = 10, by = 0.5),
-              s = c(0, 0.1, 0.25), # spermatophore boost
+              c_f = seq(from = 0.5, to = 10, by = 0.5), # 0.5 to 8
+              s = c(0, 0.1, 0.25), # spermatophore boost 0, 0.25, 0.5
               t0 = 0, # 50% resources at time 0
               k = 0.5,
               genome_wide_mutation = 0.2, # sd for normal with mu = 0
-              heatwave_time = seq(from = 0, to = 12, by = 0.5), # when are all the adults killed each year
+              heatwave_time = seq(from = 0, to = 12, by = 0.5), # when are adults killed each year 0-15
               gens = 2000)
   
 ```
@@ -648,34 +665,34 @@ Run the simulation for 5000 generations, for a single set of parameters.
 Those parameters are:
 
 ```{r}
-parameters_test <- 
+parameters_single_example <- 
   expand_grid(popsize = 1000,
               mu_f_in = 0.1,
               mu_f_out = 0.1,
               mu_m_in = 0.1,
               mu_m_out = 0.1,
               v = 8/(popsize / 2), # rate searching sex finds other sex
-              c_m = 0.5, # min time to regen spermatophore
-              c_f = 0.5,
+              c_m = 1, # min time to regen spermatophore
+              c_f = 8,
               s = 0.25, # spermatophore boost
               t0 = 0, # 50% resources at time 0
               k = 0.5,
               genome_wide_mutation = 0.2, # sd for normal with mu = 0
-              heatwave_time = 0, # when are all the adults killed each year
+              heatwave_time = 10, # when are all the adults killed each year
               gens = 5000)
 
-glimpse(parameters_test)
+glimpse(parameters_single_example)
 ```
 
 ```{r}
-if(file.exists("results/test.rds")){test <- read_rds("results/test.rds")
+if(file.exists("results/single_example.rds")){test <- read_rds("results/single_example.rds")
 }else{test <-
   main_sim(row = 1,
-           input = parameters_test,
+           input = parameters_single_example,
            sex_limited = 1,
            OSR_recording_interval = 0.5,
            sperm_competition_weightings = sperm_mixing_weights)
-write_rds(test, "results/test.rds")
+write_rds(test, "results/single_example.rds")
 }
 
 ```
@@ -693,7 +710,7 @@ lapply(1:10, # rows to run
        sperm_competition_weightings = sperm_mixing_weights)
 ```
 
-
+Run the proper simulations, split into manageable chunks
 
 ```{r}
 
@@ -706,16 +723,9 @@ space_4 <- parameter_space[301:400,]
 space_5 <- parameter_space[401:500,]
 space_6 <- parameter_space[501:600,]
 space_7_10 <- parameter_space[601:1000,]
-#space_8 <- parameter_space[701:800,]
-#space_9 <- parameter_space[801:900,]
-#space_10 <- parameter_space[901:1000,]
-space_11 <- parameter_space[1001:1100,]
-space_12 <- parameter_space[1101:1200,]
-space_13 <- parameter_space[1201:1300,]
-space_14 <- parameter_space[1301:1400,]
-space_15 <- parameter_space[1401:1500,]
+space_11_15 <- parameter_space[1001:1500,]
 
-if(!file.exists("results/complete_results_7_10.rds")){
+if(!file.exists("results/complete_results_11_15.rds")){
   
   # get the number of cores on the computer 
   n.cores <- parallel::detectCores()
@@ -727,7 +737,7 @@ if(!file.exists("results/complete_results_7_10.rds")){
   
   parallel::clusterEvalQ(cluster, c(library(dplyr)))
   
-  parallel::clusterExport(cluster, c("space_7_10",
+  parallel::clusterExport(cluster, c("space_11_15",
                                      "emergence_sample",
                                      "mother_finder_function",
                                      "father_finder_function",
@@ -736,13 +746,13 @@ if(!file.exists("results/complete_results_7_10.rds")){
                                      "sensible_sample"))
   
   results <- parallel::parLapply(cluster,
-                      1:nrow(space_7_10),
+                      1:nrow(space_11_15),
                       main_sim,
-                      input = space_7_10,
+                      input = space_11_15,
                       sex_limited = 1,
                       OSR_recording_interval = 0.5,
                       sperm_competition_weightings = sperm_mixing_weights)
-  write_rds(results, "results/complete_results_7_10.rds")
+  write_rds(results, "results/complete_results_11_15.rds")
 }
 ```
 
@@ -757,6 +767,7 @@ results_4 <- read_rds("results/complete_results_4.rds")
 results_5 <- read_rds("results/complete_results_5.rds")
 results_6 <- read_rds("results/complete_results_6.rds")
 results_7_10 <- read_rds("results/complete_results_7_10.rds")
+results_11_15 <- read_rds("results/complete_results_11_15.rds")
 
 ```
 
@@ -786,7 +797,7 @@ p1<-
   scale_colour_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
                                  pnw_palette("Sunset2", n = 5)[4])) +
   scale_x_continuous(limits = c(0,5000)) +
-  labs(y = "Mean emergence time breeding value",
+  labs(y = "Mean emergence time (breeding value)",
        colour = "Sex") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -799,7 +810,7 @@ p2<-
                                  pnw_palette("Sunset2", n = 5)[4])) +
   scale_x_continuous(limits = c(0,5000)) +
   scale_y_continuous(limits = c(0,1)) +
-  labs(y = "Standard deviation in emergence breeding value",
+  labs(y = "Standard deviation in emergence (breeding value)",
        colour = "Sex") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -810,12 +821,13 @@ p1 / p2 + plot_layout(axis_titles = "collect")
 
 ### The evolution of the OSR across many generations 
 
-```{r}
+```{r, fig.height=7}
+
 OSR_data <-
   test[2] %>% 
   as.data.frame() %>% 
   as_tibble() %>% 
-  mutate(Time = seq(from = -15, to = 0.5, by = 0.5)) %>% 
+  mutate(Time = seq(from = -15, to = 10.5, by = 0.5)) %>% 
   pivot_longer(cols = !last_col(), 
                names_to = "class", 
                values_to = "Individuals") %>% 
@@ -825,48 +837,81 @@ OSR_data <-
          generation = if_else(is.na(generation), "0", generation),
          generation = as.numeric(generation)) %>%
   select(-place) %>% 
-  filter(Time != 0.5) %>% 
-  pivot_wider(names_from = sex, values_from = Individuals)
-
-pal<-pnw_palette("Shuksan2",20)
-
-OSR_data %>% 
+  filter(Time != 10.5) %>% 
+  pivot_wider(names_from = sex, values_from = Individuals) %>% 
   mutate(OSR = Male / (Male + Female)) %>% 
   mutate(resources = 1/(1 + exp(-0.5*(Time - (0))))) %>% 
   filter(generation == 0 |
-           generation == 100 |
-           generation == 200 |
            generation == 300 |
-           generation == 400 |
-           generation == 500 |
            generation == 600 |
-           generation == 700 |
-           generation == 800 |
            generation == 900 |
-           generation == 1000 |
-           generation == 1100 |
            generation == 1200 |
-           generation == 1300 |
-           generation == 1400 |
            generation == 1500 |
-           generation == 1600 |
-           generation == 1700 |
            generation == 1800 |
-           generation == 1900 |
-           generation == 2000) %>% 
+           generation == 2100 |
+           generation == 2400 |
+           generation == 2700 |
+           generation == 3000 |
+           generation == 3300 |
+           generation == 3600 |
+           generation == 3900 |
+           generation == 4200 |
+           generation == 4500 |
+           generation == 4800 |
+           generation == 5000) %>% 
+  mutate(Female = if_else(Female == 0, NaN, Female),
+         Male = if_else(Male == 0, NaN, Male))
+
+pal_1 <- moma.colors("Alkalay2" , n=18, type="continuous")
+
+OSR_f <-
+OSR_data  %>% 
+  ggplot(aes(x = Time, y = Female, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 1, width = 0)+
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  #geom_line(aes(y = resources), colour = "black", linetype =2) +
+  scale_y_continuous(limits = c(0, 300)) +
+  labs(y = "Number of females in mating pool",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+OSR_m <-
+OSR_data  %>% 
+  ggplot(aes(x = Time, y = Male, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 1, width = 0)+
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  #geom_line(aes(y = resources), colour = "black", linetype =2) +
+  scale_y_continuous(limits = c(0, 300)) +
+  labs(y = "Number of males in mating pool",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+OSR <-
+OSR_data  %>% 
   ggplot(aes(x = Time, y = OSR, 
              group = generation, colour= generation)) +
-  #geom_point()+
-  geom_smooth(se = FALSE) +
+  geom_point(alpha = 1, height = 0.01, width = 0) +
+  geom_line(alpha = 0.6, linewidth = 0.8) +
   geom_line(aes(y = resources), colour = "black", linetype =2) +
   labs(y = "OSR (prop. males in mating pool)",
        colour = "Generation") +
-  scale_colour_gradientn(colours = pal) +
+  scale_colour_gradientn(colours = pal_1) +
   theme_bw()
+
+OSR_f + OSR_m + OSR + guide_area() +
+  plot_layout(guides = 'collect')
+
+
   
 ```
 
 ## Full results
+
+Load and wrangle the large output
 
 ```{r}
 
@@ -905,6 +950,10 @@ wrangled_results_7_10 <-
   map_dfr(1:nrow(space_7_10), results_processer, results_7_10) %>% 
   bind_cols(space_7_10)
 
+wrangled_results_11_15 <- 
+  map_dfr(1:nrow(space_11_15), results_processer, results_11_15) %>% 
+  bind_cols(space_11_15)
+
 wrangled_results <-
   bind_rows(wrangled_results_1,
             wrangled_results_2,
@@ -912,15 +961,17 @@ wrangled_results <-
             wrangled_results_4,
             wrangled_results_5,
             wrangled_results_6,
-            wrangled_results_7_10)
+            wrangled_results_7_10,
+            wrangled_results_11_15)
   
 ```
 
-Plot
-
-first let's have a look at mean emergence time for each sex
+Build panels A-D
 
 ```{r}
+# re-define the palette
+pal_2 <- pnw_palette("Shuksan2",20)
+
 heat_map_emergence <-
   wrangled_results %>% 
   rename(female = female_mean, male = male_mean) %>% 
@@ -928,14 +979,14 @@ heat_map_emergence <-
   filter(s != 0.1) %>% 
   ggplot(aes(x = c_f/c_m, y = heatwave_time)) +
   geom_raster(aes(fill = mean_emergence)) +
-  scale_fill_gradientn(colours = pal) +
+  scale_fill_gradientn(colours = pal_2) +
   facet_wrap(sex ~ s, nrow = 2,
              labeller = label_glue('Sex: {`sex`}\nSpermatophore value: {`s`}')) +
-  labs(x = "Female max time-out / Male max time-out",
-       y = "Time of heatwave\n(length of prosperity)",
+  labs(x = "Female time-out / Male time-out\nwhen resources aren't limiting",
+       y = "Length of breeding season\n(heatwave time)",
        fill = "Emergence time") +
   scale_x_continuous(expand = c(0, 0), 
-                     breaks = c(3, 6, 9, 12, 15)) + 
+                     breaks = c(3, 6, 9, 12, 15, 18)) + 
   scale_y_continuous(expand = c(0, 0)) + 
   theme(panel.border = element_rect(fill = NA, colour = "black", size = .8),
         strip.background = element_rect(colour = "black", fill = "Aliceblue", linewidth = .8),
@@ -944,24 +995,28 @@ heat_map_emergence <-
         axis.title.y = element_text(size = 16),
         axis.text = element_text(size = 12))
 
-heat_map_emergence
 ```
 
+Build panels E-F
 
 ```{r}
+
+#pal_3 <- moma.colors("Alkalay2" , n=20, type="continuous")
+pal_3 <- pnw_palette("Anemone",20)
+
 heat_map_protandry <-
   wrangled_results %>% 
   filter(s != 0.1) %>% 
   ggplot(aes(x = c_f/c_m, y = heatwave_time)) +
   geom_raster(aes(fill = female_mean - male_mean)) +
-  scale_fill_gradientn(colours = pal, limits=c(0,5)) +
+  scale_fill_gradientn(colours = rev(pal_3), limits=c(0,6)) +
   facet_wrap(~ s, nrow = 1,
              labeller = label_glue('Spermatophore value: {`s`}')) +
-  labs(x = "Female max time-out / Male max time-out",
-       y = "Time of heatwave\n(length of prosperity)",
+  labs(x = "Female time-out / Male time-out\nwhen resources aren't limiting",
+       y = "Length of breeding season\n(heatwave time)",
        fill = "Protandry") +
   scale_x_continuous(expand = c(0, 0), 
-                     breaks = c(3, 6, 9, 12, 15)) + 
+                     breaks = c(3, 6, 9, 12, 15, 18)) + 
   scale_y_continuous(expand = c(0, 0)) + 
   theme(panel.border = element_rect(fill = NA, colour = "black", size = .8),
         strip.background = element_rect(colour = "black", fill = "Aliceblue", linewidth = .8),
@@ -970,9 +1025,16 @@ heat_map_protandry <-
         axis.title.y = element_text(size = 16),
         axis.text = element_text(size = 12))
 
-panel_1 / heat_map_protandry
 ```
 
+Plot
+
+```{r}
+#| fig-height: 8
+heat_map_emergence/
+heat_map_protandry + plot_layout(axes = "collect",
+                                 heights = c(2, 1))
+```
 
 
 
