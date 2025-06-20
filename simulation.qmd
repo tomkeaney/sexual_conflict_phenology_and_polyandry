@@ -8,23 +8,25 @@ execute:
 
 ## Research question and summary of approach
 
-Here, we are interested in whether changes in seasonal resource availability produce adaptive, plastic responses in the length of development of the sex role reversing Bush cricket *K. nartee*. Protandry, where males eclose as adults, or arrive to a breeding site earlier than females has been documented across numerous taxa, including several Bush cricket species ([Simmons et al., 1994](https://www.sciencedirect.com/science/article/abs/pii/S000334728471013X); [Lehmann, 2012](https://link.springer.com/article/10.1186/1742-9994-9-19)). However, it is unknown how the availability of resources during adolescence affects the degree of protandry observed in a system.  
+Here, we are interested in whether changes in seasonal resource availability produce adaptive, plastic responses in the length of development of the sex role reversing Bush cricket *K. nartee*. Protandry, where males eclose as adults, or arrive to a breeding site earlier than females has been documented across numerous taxa, including several Bush cricket species ([Simmons et al., 1994](https://www.sciencedirect.com/science/article/abs/pii/S000334728471013X); [Lehmann, 2012](https://link.springer.com/article/10.1186/1742-9994-9-19)). However, it is unknown how the availability of resources during adolescence affects the degree of protandry observed in the population.  
 
-To generate testable predictions, we built an individual-based evolutionary simulation, where male and female emergence time could evolve independently. The simulation tracks a univoltine, gonochoristic population of adults that eclose into an environment where resources temporally increase in abundance. Females are immediately ready to breed upon eclosion, whereas males must first acquire resources, the energy from which they use to produce a spermatophore. As the breeding season progresses, males enter the mating pool and encounter receptive females at a certain rate, which leads to mating events. After mating, a female leaves the mating pool to oviposit fertilised eggs, the number of which depends on the resources currently available in the environment and the nutritional content of the spermatophore she consumed during mating. The female returns to the mating pool once all eggs have been laid. Mated males also leave the mating pool post mating, as they must produce a new spermatophore. Multiply-mated females store sperm from previous matings, producing sperm competition (see the *Fitness* section for details). Throughout the season, both sexes face a constant risk of mortality i.e. due to predation. Finally, the breeding season concludes abruptly, when all adults are killed by a heatwave, as is the case for this species in natural conditions. 
+To generate testable predictions, we built an individual-based evolutionary simulation, where male and female eclosion time could evolve independently. We simulated breeding seasons in continuous time, but treated generations as non-overlapping annual events.  
 
-We then simulate the evolution of sex-specific emergence time over many generations (the results shown below are for 2000). The composition of each generation is determined by individual reproductive success in the previous. We assume that the number of eggs laid in a season is far greater than the adult carrying capacity, which we constrain to be a constant $N$, with all eggs equally likely to make it through density-dependent population regulation. Eggs therefore act as 'lottery tickets', with more fecund females and their mating partners holding more tickets (once again, see the *Fitness* section for details). We model emergence time as a quantitative trait determined both by an individual's breeding value and environmental noise, with sex-limited expression. We track the evolution of the mean trait value amongst females and males respectively and quantify the level of protandry as the difference in mean breeding value between the sexes.  
+Within each generation, the simulation tracks a univoltine, gonochoristic population of adults that eclose into an environment where resources temporally increase in abundance. Females are immediately ready to breed upon eclosion, whereas males must first acquire resources, the energy from which they use to produce a spermatophore. As the breeding season progresses, males enter the mating pool and encounter receptive females at a certain rate, which leads to mating events. After mating, a female leaves the mating pool to oviposit fertilised eggs, the number of which depends on the resources currently available in the environment and the nutritional content of the spermatophore she consumed during mating. The female returns to the mating pool once all eggs from that reproductive bout have been laid. Mated males also leave the mating pool post mating, as they must produce a new spermatophore. Multiply-mated females store sperm from previous matings, producing sperm competition (see the *Fitness* section for details). Throughout the season, both sexes face a constant risk of mortality i.e. due to predation. Finally, the breeding season concludes abruptly, when all adults are killed by a heatwave, as is the case for this species in natural conditions. 
 
-An important point to note is that we do not model plasticity here. Instead, we allow trait values to evolve towards their sex-specific optima for a given resource abundance scenario. Speaking of which, to test how exactly these optima change in response to resource availability, we run a series of simulations, across which we vary the length of the breeding season. Specifically, we shift the timing of the heatwave. At one extreme, the heatwave hits early in the season, when resources are still scarce. At the other, the heatwave hits very late, when ad libitum resources have been available for a considerable amount of time.
+Across generations, we then tracked the evolution of sex-specific emergence time. The composition of each generation is determined by individual reproductive success in the previous. We assume that the number of eggs laid in a season is far greater than the adult carrying capacity, which we constrain to be a constant $N$, with all eggs equally likely to make it through density-dependent population regulation. Eggs therefore act as 'lottery tickets', with more fecund females and their mating partners holding more tickets (once again, see the *Fitness* section for details). We model emergence time as a quantitative trait determined both by an individual's breeding value and environmental noise, with sex-limited expression. After $G$ generations we recorded the mean trait value amongst females and males respectively, and quantified the level of protandry as the difference in mean breeding value between the sexes.  
+
+Importantly, we don't model plasticity here. Instead, we allowed emergence to evolve towards the sex-specific optima for a given resource abundance scenario. Then, to test whether these optima change in response to resource availability, we ran a series of simulations, across which we varied the length of the breeding season. Specifically, we shifted the timing of the heatwave. At one extreme, the heatwave hits early in the season, when resources are still scarce. At the other, the heatwave hits very late, when ad libitum resources have been available for a considerable amount of time (akin to poor or high quality conditions during adolescence).
 
 If the environment experienced as a juvenile provides a cue for a sex-specific plastic response in emergence time, we expect this to shift sex-specific emergence times towards their phenotypic optima, as predicted by our simulations.
 
-The remainder of this report details exactly how we built our individual-based model and includes all current results. It's broken down into several sections (Emergence, Resource abundance, Fitness and running the simulation proper), within which I've tried to give a fuller description of the relevant process, complete with the biological assumptions we made to get the thing running. 
+The remainder of this report details exactly how we built our individual-based model and includes all current results. It's broken down into several sections (Emergence, Resource abundance, Fitness and running the simulation proper), within which I've tried to give a fuller description of the relevant process, while highlighting the biological assumptions we made to get the thing running. 
 
 ## Still to do
 
-- I'm confident the simulation runs as intended, know we just need to make sure that my intentions make sense.
+- I'm confident the simulation runs as intended, we just need to make sure that my intentions make sense.
 
-- Thus far, I've only run simulations with a constant heatwave time across generations. A logical next step is to see what effect stochastic variation in the heatwave time has on the evolution of emergence time. Hanna and I suspect that bet-hedging will be important here.
+- Thus far, I've only run simulations with a constant heatwave time across generations i.e. for a given simulation, the simulation always hits at exactly time $t$. A logical next step is to see what effect stochastic variation in the heatwave time has on the evolution of emergence time. Hanna and I suspect that bet-hedging will be important here.
 
 ## Load packages
 
@@ -43,6 +45,8 @@ sensible_sample <- function(x, ...){x[sample(length(x), ...)]}
 
 ## Emergence
 
+This function turns a breeding value into a phenotypic value. We follow quant-gen convention and consider an individual's phenotype as its breeding value, plus/minus some noise caused by the environment. 
+
 ```{r}
 emergence_sample <- function(emergence_breeding_value, p){
 # T is the emergence breeding value  
@@ -60,19 +64,19 @@ How resources increase with time is described by the logistic growth function
 
 $$R(t) = \frac{1}{1 + e^{-k(t - t_0)}}$$ 
 
-where $t_0$ is the $t$ value of the functions midpoint and $k$ determines the rate at which resources enter the system. The function saturates at 1, which indicates the point where female fecundity is no longer limited by resource abundance. Here's what it looks like for different values of $t_0$, with $k$ = 1.
+where $t_0$ is the $t$ value of the functions midpoint and $k$ determines the rate at which resources enter the system. The function saturates at 1, which indicates the point where female fecundity is no longer limited by resource abundance. Here's what it looks like for different values of $t_0$, with $k$ = 0.5.
 
 ```{r}
 expand_grid(t = seq(from = -20, to = 20, by = 0.1),
-       t0 = seq(from = -5, to = 5, by = 1)) %>% 
-  mutate(resources = 1/(1 + exp(-1*(t - t0))),
-         resources = case_when(t > 10 ~ NaN,
+       t0 = seq(from = -15, to = 15, by = 2)) %>% 
+  mutate(resources = 1/(1 + exp(-0.5*(t - t0))),
+         resources = case_when(t > 15 ~ NaN,
                                .default = resources)) %>% 
   ggplot(aes(x = t, y = resources)) +
-  geom_vline(xintercept = 10, linetype = 2, linewidth = 1) +
+  geom_vline(xintercept = 15, linetype = 2, linewidth = 1) +
   geom_line(aes(colour = t0, group = t0), linewidth = 1.5) +
   scale_color_moma_c("Panton") +
-  scale_x_continuous(limits = c(-10, 11), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(-15, 16), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   labs(x = "Time, t",
        y = "Resource abundance",
@@ -81,7 +85,9 @@ expand_grid(t = seq(from = -20, to = 20, by = 0.1),
   theme(text = element_text(size = 16))
 ```
 
-$R(t)$ describes how resources flow into the system as time passes. Under the simplifying assumptions that spermatophore size is fixed across the population and that resource acquisition is independent of conspecific desnity and behaviour, the male refractory period is $x-T$, where $T$ is the time during the season when a male starts building a spermatophore and $x$ is the time-point at which he has gathered sufficient resources to produce a complete spermatophore. We calculate spermatophore production between two points in the season as 
+From this point on, I set $k = 0.5$ and $t_0 = 0$. I chose $t_0 = 0$ because it's also where I start mean emergence time for both sexes at generation zero. This just gives us a nice reference point for trait means as evolution progresses (neg trait means indicate evo of earlier emergence times). However time units are completely arbitrary and can easily be changed if this is not intuitive. 
+
+$R(t)$ describes how resources flow into the system as time passes. Under the simplifying assumptions that spermatophore size is fixed across the population and that resource acquisition is independent of conspecific density and behaviour, the male refractory period is $x-T$, where $T$ is the time during the season when a male starts building a spermatophore and $x$ is the time-point at which he has gathered sufficient resources to produce a complete spermatophore. We calculate spermatophore production between two points in the season as 
 $$
 A = \int_{T}^{x} \frac{1}{c_\mathrm{m} + e^{-k(t - t_0)}} \,dt 
 $$ 
@@ -90,12 +96,7 @@ where $c_\mathrm{m}$ controls how efficiently males convert these resources into
 $$
 x = \frac{kt_0 + \mathrm{Log}[\frac{-1+e^{c_\mathrm{m}k} + c_\mathrm{m}e^{c_\mathrm{m}k + k (T-t_0)}}{c_\mathrm{m}}]}{k}
 $$
-
-::: callout-tip
-## An alternative
-
-$R(t)$ describes how resources flow into the system as time passes. Let the speed at which males convert available resources into spermatophore be governed by the constant $c$, such that the male refractory period is $r_\mathrm{m}(R) = cT_Be^{-kR}+r_0$, where $T_B$ is the length of the breeding season (**this is L in Hanna's model**), $r_0$ is the time required to build a spermatophore at the resource peak, and $k$ determines the rate at which the refractory decreases with an increase in resources.
-:::
+**An example**
 
 Resource availability has the opposite effect on the female refractory period. We assume that females use the resources available to them immediately after mating to produce eggs, which they then spend time out of the mating pool ovipositing. Females lay eggs at a population-wide constant rate; the time spent out of the mating pool is therefore determined by the number of eggs they were able to produce immediately after mating. Longer refractory periods result from having a greater number of eggs to lay. Females also acquire resources from the spermatophore they receive during mating, which provides an additive 'bump' to the resources they have at their disposal. The efficiency at which females convert resources into eggs is controlled by the constant $c_\mathrm{f}$, such that the female refractory is $r_\mathrm{f}=c_\mathrm{f}(R(t) + s)$, where $s$ is a population-wide constant that controls the nutritional content of the spermatophore. Any values of $R(t) + s$ that exceed 1 are reset to 1; the value where female fecundity is no longer limited by resources.
 
@@ -147,7 +148,7 @@ expand_grid(t = seq(from = -20, to = 20, by = 0.1),
   scale_x_continuous(limits = c(-10, 15.5), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0.005, 0.005)) +
     labs(x = "Time, t",
-       y = "Time out (mean expectation)") +
+       y = "Time out") +
   scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12,
                                 14, 16, 18, 20)) +
   theme_bw() +
@@ -178,9 +179,11 @@ get_female_resource_quantity <- function(t, t0, k, s){
 
 ## Fitness
 
-The quantity maximised by selection on both sexes is lifetime reproductive success. For females, this is equivalent to the total time they spend in time-out, ovipositing eggs. We treat eggs like tickets in a lottery, and draw mothers for adults in the next generation, weighted by the number of 'tickets' each female has. The relevant lottery is density-dependent viability selection, which we assume to occur prior to the reproductive life-stage, with each egg having equal probability of making it. 
+For both sexes, the quantity maximised by selection is lifetime reproductive success. For females, this is equivalent to the total time they spend in time-out, ovipositing eggs. We treat eggs like tickets in a lottery, and draw mothers for adults in the next generation, weighted by the number of 'tickets' each female has. The relevant lottery is density-dependent viability selection, which we assume to occur prior to the reproductive life-stage, with each egg having equal probability of making it. 
 
-For males, reproductive success depends on mating success, the fecundity of a male's mates and the intensity of sperm competition the male faces within each female he inseminates. We model sperm competition under complete sperm-mixing, where a single mating is sufficient to fill the spermatheca. Specifically, when a female mates with a second male, she dumps half of the total sperm she has received randomly (as she has received enough to fill her spermatheca twice-over), such that her spermatheca now contains equal parts of male one and male two's ejaculate. If she mates a third time, she again dumps half the sperm, such that male three contributes half the present sperm, and male one and male two's representation is reduced to a quarter. A female's recent mates therefore have the highest chance of siring her offspring. To put this in perspective, a male's probability of fathering offspring from a given reproductive bout reduces to ~0.01 if the female has subsequently mated six more times. For completeness, we consider cases where females have mated up to 15 times, though this rarely if ever occurs in simulations.     
+For males, reproductive success depends on mating success, the fecundity of a male's mates and the intensity of sperm competition the male faces within the reproductive tract of each female he inseminates. We model sperm competition under complete sperm-mixing, where a single mating is sufficient to fill the spermatheca. To make things a bit easier, I've made the simplifying assumption that fertilisation and sperm mortality have negligible effects on the number of sperm in the spermatheca. Thus, when a female mates with a second male, she dumps half of the total sperm she has received randomly (as she has received enough to fill her spermatheca twice-over), such that her spermatheca now contains equal parts of male one and male two's ejaculate. If she mates a third time, she again dumps half the sperm, such that male three contributes half the present sperm, and male one and male two's representation is reduced to a quarter each. A female's recent mates therefore have the highest chance of siring her offspring. To put this in perspective, a male's probability of fathering offspring from a given reproductive bout reduces to ~0.01 if the female has subsequently mated six more times. For completeness, we consider cases where females have mated up to 15 times, though this never occurs in the currently run simulations.
+
+
 
 ```{r}
 # get total length of time each mating caused a female to leave mating pool == LRS 
@@ -662,28 +665,6 @@ main_sim <- function(row, # which row of the parameter space
 
 Run the simulation for 5000 generations, for a single set of parameters.
 
-Those parameters are:
-
-```{r}
-parameters_single_example <- 
-  expand_grid(popsize = 1000,
-              mu_f_in = 0.1,
-              mu_f_out = 0.1,
-              mu_m_in = 0.1,
-              mu_m_out = 0.1,
-              v = 8/(popsize / 2), # rate searching sex finds other sex
-              c_m = 1, # min time to regen spermatophore
-              c_f = 8,
-              s = 0.25, # spermatophore boost
-              t0 = 0, # 50% resources at time 0
-              k = 0.5,
-              genome_wide_mutation = 0.2, # sd for normal with mu = 0
-              heatwave_time = 10, # when are all the adults killed each year
-              gens = 5000)
-
-glimpse(parameters_single_example)
-```
-
 ```{r}
 if(file.exists("results/single_example.rds")){test <- read_rds("results/single_example.rds")
 }else{test <-
@@ -697,7 +678,7 @@ write_rds(test, "results/single_example.rds")
 
 ```
 
-Run the simulation for a 1,000 generations, for many combinations of parameters. To do this, we make use of the `parallel` package, which allows us to split the simulation effort across multiple cores.
+Run the simulation for 2,000 generations, for many combinations of parameters. To do this, we make use of the `parallel` package, which allows us to split the simulation effort across multiple cores.
 
 For testing, I've first included code for running the simulation on a single core
 
@@ -710,7 +691,7 @@ lapply(1:10, # rows to run
        sperm_competition_weightings = sperm_mixing_weights)
 ```
 
-Run the proper simulations, split into manageable chunks
+Run the proper simulation by multi-coring, splitting it into manageable chunks
 
 ```{r}
 
@@ -773,6 +754,29 @@ results_11_15 <- read_rds("results/complete_results_11_15.rds")
 
 ## Plotting a single example
 
+To get an idea for how long simulations need to run before trait values converge on some optimum, I ran a single simulation with the following parameter values:
+
+```{r}
+parameters_single_example <- 
+  expand_grid(popsize = 1000,
+              mu_f_in = 0.1,
+              mu_f_out = 0.1,
+              mu_m_in = 0.1,
+              mu_m_out = 0.1,
+              v = 8/(popsize / 2), # rate searching sex finds other sex
+              c_m = 1, # min time to regen spermatophore
+              c_f = 8,
+              s = 0.25, # spermatophore boost
+              t0 = 0, # 50% resources at time 0
+              k = 0.5,
+              genome_wide_mutation = 0.2, # sd for normal with mu = 0
+              heatwave_time = 10, # when are all the adults killed each year
+              gens = 5000)
+
+glimpse(parameters_single_example)
+```
+
+
 ### The evolution of protandry across many generations
 
 ```{r, fig.height=8}
@@ -810,7 +814,7 @@ p2<-
                                  pnw_palette("Sunset2", n = 5)[4])) +
   scale_x_continuous(limits = c(0,5000)) +
   scale_y_continuous(limits = c(0,1)) +
-  labs(y = "Standard deviation in emergence (breeding value)",
+  labs(y = "Genetic variation in emergence (breeding value SD)",
        colour = "Sex") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -820,6 +824,8 @@ p1 / p2 + plot_layout(axis_titles = "collect")
 ```
 
 ### The evolution of the OSR across many generations 
+
+For this example, we can also plot how the OSR changes in response to selection. 
 
 ```{r, fig.height=7}
 
@@ -1037,7 +1043,11 @@ heat_map_protandry + plot_layout(axes = "collect",
 ```
 
 
+The left column of panels shows the results when the spermatophore has no nutritional value for females. This condition is not biologically realistic (especially given males don't re-enter the mating pool until they have produced a spermatophore) but it does provide an interesting comparison with the right column, where each spermatophore provides 25% of the resources females need to produce the maximum amount of eggs. At least for this comparison, the nutritional value of the spermatophore appears to have little qualitative impact on protandry. It's possible that more nutritional spermatophores produce qualitative differences; that's something I can explore.
 
+For now though, let's focus on the effects of two other parameters: the difference in time-out between the sexes when resources aren't limiting (i.e. when $R = 1$; x-axis) and the length of time resources are available before the heatwave hits (y-axis). For females (top row of panels), the results are intuitive. Emergence time depends on when the heat-wave hits; earlier heat-waves/late arriving resources = earlier relative emergence. In other words, if resources are late, selection does not favour waiting for them to increase. 
+
+For males, the effects are more complex. Like females, males evolve earlier emergence times when the heatwave hits early, but the effect is more extreme. Additionally, if the difference in time-out with plentiful resources is small, male emergence is very sensitive to the timing of the heatwave. In this case, the extent of protandry is large with early heatwaves, but rapidly becomes minor when heatwaves occur later. If the difference in time-out is instead large, male emergence is much less sensitive to heatwave timing. The result is consistently strong protandry across a wide-range of heatwave timings.    
 
 
 
