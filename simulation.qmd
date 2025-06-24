@@ -116,7 +116,7 @@ panel_1 <-
                colour = "black", linetype = 2, linewidth = 0.7) +
   geom_vline(xintercept = 15, linetype = 2, linewidth = 0.7) +
   geom_line(linewidth = 1) +
-  scale_x_continuous(limits = c(-10, 15.5), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(-15.5, 15.5), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0.005, 0.005)) +
   labs(x = "Time, t",
        y = "Resource abundance") +
@@ -126,7 +126,7 @@ panel_1 <-
 
 panel_2 <-
 expand_grid(t = seq(from = -20, to = 20, by = 0.1),
-       t0 = seq(from = -10, to = 15, by = 1),
+       t0 = seq(from = -15, to = 15, by = 1),
        cm = 0.5,
        fm = 3, 
        k = 0.5) %>% 
@@ -142,7 +142,7 @@ expand_grid(t = seq(from = -20, to = 20, by = 0.1),
   geom_vline(xintercept = 0, linetype = 2, linewidth = 0.7) +
   geom_textline(aes(y = male_timeout, label = "Males"), size = 6, hjust = 0.12) +
   geom_textline(aes(y = female_timeout, label = "Females"), size = 6, hjust = 0.12) +
-  scale_x_continuous(limits = c(-10, 15.5), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(-15.5, 15.5), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0.005, 0.005)) +
     labs(x = "Time, t",
        y = "Time out") +
@@ -178,7 +178,7 @@ get_female_resource_quantity <- function(t, t0, k, s){
 
 For both sexes, the quantity maximised by selection is lifetime reproductive success. For females, this is equivalent to the total time they spend in time-out, ovipositing eggs. We treat eggs like tickets in a lottery, and draw mothers for adults in the next generation, weighted by the number of 'tickets' each female has. The relevant lottery is density-dependent viability selection, which we assume to occur prior to the reproductive life-stage, with each egg having equal probability of making it. 
 
-For males, reproductive success depends on mating success, the fecundity of a male's mates and the intensity of sperm competition the male faces within the reproductive tract of each female he inseminates. We model sperm competition under two different scenarios: 1) sperm-mixing, where a single mating is sufficient to fill the spermatheca. Thus, when a female mates with a second male, she dumps half of the total sperm she has received randomly (as she has received enough to fill her spermatheca twice-over), such that her spermatheca now contains equal parts of male one and male two's ejaculate. If she mates a third time, she again dumps half the sperm, such that male three contributes half the present sperm, and male one and male two's representation is reduced to a quarter each. A female's recent mates therefore have the highest chance of siring her offspring. To put this in perspective, a male's probability of fathering offspring from a given reproductive bout reduces to ~0.01 if the female has subsequently mated six more times. 2) complete sperm-mixing without any sperm dumping. Here, a female's spermatheca expands to store all the sperm she receives across her life. Paternity is evenly divided between her mates i.e. an egg of a thrice-mated female has a 33% chance of being fertilised by a sperm from each male. In both cases, I've made the simplifying assumption that fertilisation and sperm mortality have negligible effects on the number of sperm in the spermatheca.  For completeness, we consider cases where females have mated up to 15 times, though this never occurs in the currently run simulations.
+For males, reproductive success depends on mating success, the fecundity of a male's mates and the intensity of sperm competition the male faces within the reproductive tract of each female he inseminates. We model sperm competition under two different scenarios: 1) sperm-dumping, where a single mating is sufficient to fill the spermatheca. Thus, when a female mates with a second male, she dumps half of the total sperm she has received randomly (as she has received enough to fill her spermatheca twice-over), such that her spermatheca now contains equal parts of male one and male two's ejaculate. If she mates a third time, she again dumps half the sperm, such that male three contributes half the present sperm, and male one and male two's representation is reduced to a quarter each. A female's recent mates therefore have the highest chance of siring her offspring. To put this in perspective, a male's probability of fathering offspring from a given reproductive bout reduces to ~0.01 if the female has subsequently mated six more times. 2) complete sperm-mixing without any sperm dumping. Here, a female's spermatheca expands to store all the sperm she receives across her life. Paternity is evenly divided between her mates i.e. an egg of a thrice-mated female has a 33% chance of being fertilised by a sperm from each male. In both cases, I've made the simplifying assumption that fertilisation and sperm mortality have negligible effects on the number of sperm in the spermatheca.  For completeness, we consider cases where females have mated up to 15 times, though this never occurs in the currently run simulations.
 
 ```{r}
 # get total length of time each mating caused a female to leave mating pool == LRS 
