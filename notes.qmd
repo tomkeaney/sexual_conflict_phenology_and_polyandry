@@ -80,4 +80,11 @@ format: html
 
 - Partitioning paternity is challenging but possible for me. Females mix sperm, with a female's spermatheca depleting at a certain (constant) rate. As new sperm is added take proportions in the spermatheca from the total amount received, not whats existing + a top up.
 
-- Females enter mating pool when they aren't laying eggs. That is, we model them as income breeders. Once eggs from one breeding bout are exhausted, new one's need to be created, leaving time for mating. Perhaps we could assume a constant rate of reproduction when eggs are present, with available resources increasing the length of the egg-laying period and therefore the number of eggs laid. 
+- Females enter mating pool when they aren't laying eggs. That is, we model them as income breeders. Once eggs from one breeding bout are exhausted, new one's need to be created, leaving time for mating. Perhaps we could assume a constant rate of reproduction when eggs are present, with available resources increasing the length of the egg-laying period and therefore the number of eggs laid.
+
+# 24/06/25
+
+- For the K. nartee system we have no evidence for sperm dumping, indeed we have more evidence to suggest the sperm store expands to accommodate all ejaculates from all males. This would mean that with three matings all males share paternity at random, rather than the bias you have built in toward the last male to mate.
+
+- I also think you should explore how the gamete acquisition from a spermatophore affects things, that is, the costs of remaining virgin foe females. We know from our field studies that because females mate multiply to get additional resources, this also means that some females remain unmated because there are not enough males around. Particularly important for late emerging females who need sperm not just nutrients as the earlier emerging females they are competing with.
+
