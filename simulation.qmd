@@ -6,25 +6,27 @@ execute:
   message: false
 ---
 
-## Research question and summary of approach
+## Research question and summary of approach {#sec-intro}
 
 Here, we are interested in whether changes in seasonal resource availability produce adaptive, plastic responses in the length of development of the sex role reversing Bush cricket *K. nartee*. Protandry, where males eclose as adults, or arrive to a breeding site earlier than females has been documented across numerous taxa, including several Bush cricket species ([Simmons et al., 1994](https://www.sciencedirect.com/science/article/abs/pii/S000334728471013X); [Lehmann, 2012](https://link.springer.com/article/10.1186/1742-9994-9-19)). However, it is unknown how the availability of resources during adolescence affects the degree of protandry observed in the population.  
 
 To generate testable predictions, we built an individual-based evolutionary simulation, where male and female eclosion time could evolve independently. We simulated breeding seasons in continuous time, but treated generations as non-overlapping annual events.  
 
-Within each generation, the simulation tracks a univoltine, gonochoristic population of adults that eclose into an environment where resources temporally increase in abundance. Females are immediately ready to breed upon eclosion, whereas males must first acquire resources, the energy from which they use to produce a spermatophore. As the breeding season progresses, males enter the mating pool and encounter receptive females at a certain rate, which leads to mating events. After mating, a female leaves the mating pool to oviposit fertilised eggs, the number of which depends on the resources currently available in the environment and the nutritional content of the spermatophore she consumed during mating. The female returns to the mating pool once all eggs from that reproductive bout have been laid. Mated males also leave the mating pool post mating, as they must produce a new spermatophore. Multiply-mated females store sperm from previous matings, producing sperm competition (see the *Fitness* section for details). Throughout the season, both sexes face a constant risk of mortality i.e. due to predation. Finally, the breeding season concludes abruptly, when all adults are killed by a heatwave, as is the case for this species in natural conditions. 
+Within each generation, the simulation tracks a univoltine, gonochoristic population of adults that eclose into an environment where resources temporally increase in abundance. Females are immediately ready to breed upon eclosion, whereas males must first acquire resources, the energy from which they use to produce a spermatophore. As the breeding season progresses, males enter the mating pool and encounter receptive females at a certain rate, which leads to mating events. After mating, a female leaves the mating pool to oviposit fertilised eggs, the number of which depends on the resources currently available in the environment and the nutritional content of the spermatophore she consumed during mating. The female returns to the mating pool once all eggs from that reproductive bout have been laid. Mated males also leave the mating pool post mating, as they must produce a new spermatophore. Multiply-mated females store sperm from previous matings, producing sperm competition (see the [Fitness](@sec-fitness) section for details). Throughout the season, both sexes face a constant risk of mortality i.e. due to predation. Finally, the breeding season concludes abruptly, when all adults are killed by a heatwave, as is the case for this species in natural conditions. 
 
-Across generations, we then tracked the evolution of sex-specific emergence time. The composition of each generation is determined by individual reproductive success in the previous. We assume that the number of eggs laid in a season is far greater than the adult carrying capacity, which we constrain to be a constant $N$, with all eggs equally likely to make it through density-dependent population regulation. Eggs therefore act as 'lottery tickets', with more fecund females and their mating partners holding more tickets (once again, see the *Fitness* section for details). We model emergence time as a quantitative trait determined both by an individual's breeding value and environmental noise, with sex-limited expression. After $G$ generations we recorded the mean trait value amongst females and males respectively, and quantified the level of protandry as the difference in mean breeding value between the sexes.  
+Across generations, we then tracked the evolution of sex-specific emergence time. The composition of each generation is determined by individual reproductive success in the previous. We assume that the number of eggs laid in a season is far greater than the adult carrying capacity, which we constrain to be a constant $N$, with all eggs equally likely to make it through density-dependent population regulation. Eggs therefore act as 'lottery tickets', with more fecund females and their mating partners holding more tickets (once again, see the [Fitness](@sec-fitness) section for details). We model emergence time as a quantitative trait determined by both an individual's breeding value and environmental noise, with sex-limited expression. After $G$ generations we recorded the mean trait value amongst females and males respectively, and quantified the level of protandry as the difference in mean breeding value between the sexes.  
 
-Importantly, we don't model plasticity here. Instead, we allowed emergence to evolve towards the sex-specific optima for a given resource abundance scenario. Then, to test whether these optima change in response to resource availability, we ran a series of simulations, across which we varied the length of the breeding season. Specifically, we shifted the timing of the heatwave. At one extreme, the heatwave hits early in the season, when resources are still scarce. At the other, the heatwave hits very late, when ad libitum resources have been available for a considerable amount of time (akin to poor or high quality conditions during adolescence). If the environment experienced as a juvenile provides a cue for a sex-specific plastic response in emergence time, we expect this to shift sex-specific emergence times towards their phenotypic optima, as predicted by our simulations.
+Importantly, we don't model plasticity here. Instead, we allowed emergence to evolve towards the sex-specific optima in a given resource abundance scenario. Then, to test whether these optima change in response to resource availability, we ran a series of simulations, across which we varied the length of the breeding season. Specifically, we shifted the timing of the heatwave. At one extreme, the heatwave hits early in the season, when resources are still scarce. At the other, the heatwave hits very late, when ad libitum resources have been available for a considerable amount of time (akin to poor or high quality conditions during adolescence). If the environment experienced as a juvenile provides a cue for a sex-specific plastic response in emergence time, we expect this to shift sex-specific emergence times towards their phenotypic optima, as predicted by our simulations.
 
 The remainder of this report details exactly how we built our individual-based model and includes all current results. It's broken down into several sections (Emergence, Resource abundance, Fitness and running the simulation proper), within which I've tried to give a fuller description of the relevant process, while highlighting the biological assumptions we made to get the thing running. 
 
-## Still to do
+## Still to do {#sec-ongoing}
 
-- Thus far, I've only run simulations with a constant heatwave time across generations i.e. for a given simulation, the simulation always hits at exactly time $t$. A logical next step is to see what effect stochastic variation in the heatwave time has on the evolution of emergence time. Hanna and I suspect that bet-hedging will be important here.
+- Thus far, I've only run simulations with a constant heatwave time across generations i.e. for a given simulation, the heatwave always hits at exactly time $t$. A logical next step is to see what effect stochastic variation in the heatwave time has on the evolution of emergence time. Hanna and I suspect that bet-hedging will be important here.
 
-## Load packages
+- I would also like to run a counterfactual simulation where males start in the mating pool, as I suspect this is why we never see protogyny.
+
+## Load packages {#sec-packages}
 
 ```{r}
 library(tidyverse)
@@ -39,7 +41,7 @@ sensible_sample <- function(x, ...){x[sample(length(x), ...)]}
 
 ```
 
-## Emergence
+## Emergence {#sec-emergence}
 
 This function turns a breeding value into a phenotypic value. We follow quant-gen convention and consider an individual's phenotype as its breeding value, plus/minus some noise caused by the environment. 
 
@@ -54,7 +56,7 @@ emergence_breeding_value+log(p/(1-p))
 }
 ```
 
-## Resource abundance
+## Resource abundance {#sec-resources}
 
 How resources increase with time is described by the logistic growth function
 
@@ -174,37 +176,19 @@ get_female_resource_quantity <- function(t, t0, k, s){
 
 ```
 
-## Fitness
+## Fitness {#sec-fitness}
 
 For both sexes, the quantity maximised by selection is lifetime reproductive success. For females, this is equivalent to the total time they spend in time-out, ovipositing eggs. We treat eggs like tickets in a lottery, and draw mothers for adults in the next generation, weighted by the number of 'tickets' each female has. The relevant lottery is density-dependent viability selection, which we assume to occur prior to the reproductive life-stage, with each egg having equal probability of making it. 
 
-For males, reproductive success depends on mating success, the fecundity of a male's mates and the intensity of sperm competition the male faces within the reproductive tract of each female he inseminates. We model sperm competition under two different scenarios: 1) sperm-dumping, where a single mating is sufficient to fill the spermatheca. Thus, when a female mates with a second male, she dumps half of the total sperm she has received randomly (as she has received enough to fill her spermatheca twice-over), such that her spermatheca now contains equal parts of male one and male two's ejaculate. If she mates a third time, she again dumps half the sperm, such that male three contributes half the present sperm, and male one and male two's representation is reduced to a quarter each. A female's recent mates therefore have the highest chance of siring her offspring. To put this in perspective, a male's probability of fathering offspring from a given reproductive bout reduces to ~0.01 if the female has subsequently mated six more times. 2) complete sperm-mixing without any sperm dumping. Here, a female's spermatheca expands to store all the sperm she receives across her life. Paternity is evenly divided between her mates i.e. an egg of a thrice-mated female has a 33% chance of being fertilised by a sperm from each male. In both cases, I've made the simplifying assumption that fertilisation and sperm mortality have negligible effects on the number of sperm in the spermatheca.  For completeness, we consider cases where females have mated up to 15 times, though this never occurs in the currently run simulations.
+For males, reproductive success depends on mating success, the fecundity of their mates and the intensity of sperm competition. We model sperm competition under two different scenarios: 1) sperm-dumping, where a single mating is sufficient to fill the spermatheca and 2) complete sperm-mixing without any sperm dumping. In the sperm-dumping scenario, when a female mates with a second male, she dumps half of the total sperm she has received randomly (as she has received enough to fill her spermatheca twice-over), such that her spermatheca now contains equal parts of male one and male two's ejaculate. If she mates a third time, she again dumps half the sperm, such that male three contributes half the present sperm, and male one and male two have their representation reduced to a quarter each. A female's recent mates therefore have the highest chance of siring her offspring (there is *last-male sperm precedence*). To put this in perspective, a male's probability of fathering offspring from a given reproductive bout reduces to ~0.01 if the female has subsequently mated six more times. 2) In the complete sperm-mixing scenario, a female's spermatheca expands to store all the sperm she receives across her life. Paternity is evenly divided between her mates i.e. an egg of a thrice-mated female has a 33% chance of being fertilised by a sperm from each male. This is *fair-raffle* sperm competition. In both cases, I've made the simplifying assumption that fertilisation and sperm mortality have negligible effects on the number of sperm in the spermatheca. For completeness, we consider cases where females have mated up to 15 times, though this never occurs in the currently run simulations.
 
 ```{r}
-# get total length of time each mating caused a female to leave mating pool == LRS 
 # we model two different sperm competition scenarios
 # 1) sperm dumping, leading to last male sperm precedence
 # 2) fair raffle, where all inseminated sperm are stored by a female
 
 # columns are how polyandrous a female has been
 # rows hold the mating partner's paternity prob, which depends on how many times the female has subsequently mated
-
-fair_raffle_weights <-
-  data.frame(Mating1 = c(1, rep(0, 14)),
-             Mating2 = c(rep(1/2, 2), rep(0, 13)),
-             Mating3 = c(rep(1/3, 3), rep(0, 12)),
-             Mating4 = c(rep(1/4, 4), rep(0, 11)),
-             Mating5 = c(rep(1/5, 5), rep(0, 10)),
-             Mating6 = c(rep(1/6, 6), rep(0, 9)),
-             Mating7 = c(rep(1/7, 7), rep(0, 8)),
-             Mating8 = c(rep(1/8, 8), rep(0, 7)),
-             Mating9 = c(rep(1/9, 9), rep(0, 6)),
-             Mating10 = c(rep(1/10, 10), rep(0, 5)),
-             Mating11 = c(rep(1/11, 11), rep(0, 4)),
-             Mating12 = c(rep(1/12, 12), rep(0, 3)),
-             Mating13 = c(rep(1/13, 13), rep(0, 2)),
-             Mating14 = c(rep(1/14, 14), rep(0, 1)),
-             Mating15 = c(rep(1/15, 15)))
 
 sperm_precedence_weights <-
   data.frame(Mating1 = c(1, rep(0, 14)),
@@ -230,7 +214,24 @@ sperm_precedence_weights <-
              Mating15 = c(0.5^14, 0.5^14, 0.5^13, 0.5^12, 0.5^11, 0.5^10, 0.5^9, 0.5^8,
                           0.5^7, 0.5^6, 0.5^5, 0.5^4, 0.5^3, 0.5^2, 0.5))
 
-# mother function
+fair_raffle_weights <-
+  data.frame(Mating1 = c(1, rep(0, 14)),
+             Mating2 = c(rep(1/2, 2), rep(0, 13)),
+             Mating3 = c(rep(1/3, 3), rep(0, 12)),
+             Mating4 = c(rep(1/4, 4), rep(0, 11)),
+             Mating5 = c(rep(1/5, 5), rep(0, 10)),
+             Mating6 = c(rep(1/6, 6), rep(0, 9)),
+             Mating7 = c(rep(1/7, 7), rep(0, 8)),
+             Mating8 = c(rep(1/8, 8), rep(0, 7)),
+             Mating9 = c(rep(1/9, 9), rep(0, 6)),
+             Mating10 = c(rep(1/10, 10), rep(0, 5)),
+             Mating11 = c(rep(1/11, 11), rep(0, 4)),
+             Mating12 = c(rep(1/12, 12), rep(0, 3)),
+             Mating13 = c(rep(1/13, 13), rep(0, 2)),
+             Mating14 = c(rep(1/14, 14), rep(0, 1)),
+             Mating15 = c(rep(1/15, 15)))
+
+# mother function - mothers are drawn from the pool of egg-laying females, weighted by their relative fecundity 
 
 mother_finder_function <- 
   function(fecundity_matrix, # holds times for reproductive bouts
@@ -292,36 +293,38 @@ father_finder_function <-
 
 ```
 
-## Define parameter space
+## Define parameter space {#sec-params}
 
 ```{r}
 
 parameter_space <- 
-  expand_grid(popsize = 500, # 1000
+  expand_grid(popsize = 1000, # 1000
               mu_f_in = 0.1,
               mu_f_out = 0.1,
               mu_m_in = 0.1,
               mu_m_out = 0.1,
-              v = 8/(popsize / 2), # rate searching sex finds other sex
+              v = c(8/(popsize / 2), 50/(popsize / 2)), # rate searching sex finds other sex
               c_m = 0.5, # min time to regen spermatophore
-              c_f = seq(from = 0.5, to = 10, by = 0.5), # 0.5 to 8
-              s = c(0, 0.1, 0.25), # spermatophore boost 0, 0.25, 0.5
+              c_f = seq(from = 0.5, to = 8, by = 0.5), # 0.5 to 8
+              s = c(0, 0.25, 0.5), # spermatophore boost 0, 0.25, 0.5
               t0 = 0, # 50% resources at time 0
               k = 0.5,
-              genome_wide_mutation = 0.2, # sd for normal with mu = 0
-              heatwave_time = seq(from = 0, to = 12, by = 0.5), # when are adults killed each year 0-15
+              genome_wide_mutation = 0.2, # sd for normal with mu = 0 (variance is sigma^2)
+              heatwave_time = seq(from = 0, to = 15, by = 1), # when are adults killed each year
+              bet_hedging = c(0,1), # 0 = no, 1 = yes
               gens = 2000)
   
 ```
 
-## The main simulation function
+## The complete simulation function {#sec-sim}
 
 ```{r}
-main_sim <- function(row, # which row of the parameter space
+simulation <- function(row, # which row of the parameter space
                      input, # the parameter space
                      sex_limited, # -1 = no, +1 = yes
                      OSR_recording_interval, # time points to record OSR
-                     sperm_competition_weightings
+                     sperm_competition_weightings, # fair raffle, or last male precedence
+                     male_start_out # TRUE or FALSE. Allows counter-factual test 
 ){
   #print(paste("doing row", row))
   
@@ -338,8 +341,12 @@ main_sim <- function(row, # which row of the parameter space
   t0 <- input$t0[row]
   k <- input$k[row]
   genome_wide_mutation <- input$genome_wide_mutation[row]
-  heatwave_time <- input$heatwave_time[row]
   gens <- input$gens[row]
+  
+  # constant heatwave time across generations
+  if(input$bet_hedging[row] == 0){
+    heatwave_time <- input$heatwave_time[row]
+  }
   
   sperm_comp_weights <- sperm_competition_weightings
   
@@ -393,11 +400,14 @@ main_sim <- function(row, # which row of the parameter space
   # Inf: dead or yet to emerge
   
   # setup array to record results every generation
-  mean_trait_value <- matrix(NaN, ncol = 5, nrow = length(0:gens))
+  # first 4 cols track emergence means and sd, 
+  # 5th is heatwave time
+  # 6th is prop females unmated in a generation
+  mean_trait_value <- matrix(NaN, ncol = 6, nrow = length(0:gens))
   
   OSR_list <- list(rep(NaN, length(0:gens)))
   
-  # simulate evolution over many generations - within each generation, fitness is accrued during the breeding season, which we simulate with a gillespie-like process of events 
+  # simulate evolution over many generations - within each generation, fitness is accrued during the breeding season, which we simulate with a Gillespie-like process of events 
   G <- 0  
   matings <- 1 # placeholder to get things started - sim will quit if no females mate
   
@@ -428,8 +438,17 @@ main_sim <- function(row, # which row of the parameter space
     female_mating_partners <- matrix(NaN, nrow =  popsize, ncol = 15)
     
     if(pop[1, 3] < -15){ 
-    t <- pop[1, 3] - 0.0001 # start tracking the population just before first emergence
+      t <- pop[1, 3] - 0.0001 # start tracking the population just before first emergence
     } else{t <- -15} # start sim here at the latest
+    
+    # set the heatwave time for the current gen
+    
+    if(input$bet_hedging[row] > 0){
+      heatwave_time <- runif(1, min = input$heatwave_time[row], max =
+                               15)
+                               #max(input$heatwave_time)) # 
+      mean_trait_value[G+1,5] <- heatwave_time
+    }
     
     alive <- popsize # a stop early condition if everyone dies before the heatwave
     
@@ -501,9 +520,9 @@ main_sim <- function(row, # which row of the parameter space
         # because ID is ordered by emergence, select first row after filtering out old events
         emergence_ID <- pop[pop$emergence_time >= t, "ID"][1]
         
-        if(pop[pop$ID == emergence_ID,]$sex > 0){ # if male, find time male enters mating pool
+        if(pop[pop$ID == emergence_ID,]$sex > 0 & male_start_out){ # if male, find time male enters mating pool
           pop[emergence_ID, "state"] <- get_male_time_in(c_m, t, t0, k)
-        } else{pop[emergence_ID, "state"] <- NaN} # if female, start in time-in
+        } else{pop[emergence_ID, "state"] <- NaN} # if female or the counter-factual male case, start in time-in
       }
       
       # if the next event is a mating
@@ -661,8 +680,7 @@ main_sim <- function(row, # which row of the parameter space
     # record OSR across season
     OSR_list[[G+1]] <- OSR
     # record prop. unmated females 
-    mean_trait_value[G+1,5] <- 1 - sum(!is.na(female_mating_partners[,1]))/(popsize - sum(pop[,1]))
-    
+    mean_trait_value[G+1,6] <- 1 - sum(!is.na(female_mating_partners[,1]))/(popsize - sum(pop[,1]))
     
     # update the generation counter 
     G <- G + 1
@@ -676,12 +694,29 @@ main_sim <- function(row, # which row of the parameter space
 }
 ```
 
-## Run the simulation
+## Run the simulation {#sec-run}
 
-Run the simulation for 5000 generations, for a single set of parameters.
+Run the simulation for 10,000 generations, for a single set of parameters.
 
 ```{r}
 parameters_single_example <- 
+  expand_grid(popsize = 1000,
+              mu_f_in = 0.1,
+              mu_f_out = 0.1,
+              mu_m_in = 0.1,
+              mu_m_out = 0.1,
+              v = 8/(popsize / 2),
+              c_m = 1,
+              c_f = 8,
+              s = 0.25,
+              t0 = 0,
+              k = 0.5,
+              genome_wide_mutation = 0.2,
+              heatwave_time = 10, 
+              bet_hedging = 0,
+              gens = 10000)
+
+parameters_single_example_bh <- 
   expand_grid(popsize = 1000,
               mu_f_in = 0.1,
               mu_f_out = 0.1,
@@ -695,33 +730,122 @@ parameters_single_example <-
               k = 0.5,
               genome_wide_mutation = 0.2, # sd for normal with mu = 0
               heatwave_time = 10, # when are all the adults killed each year
-              gens = 5000)
+              bet_hedging = 1, # this is the only difference from above
+              gens = 10000)
 ```
 
+First let's do it for our four cases, holding the heatwave time constant across generations
 
 ```{r}
-# last male sperm precedence
-if(file.exists("results/single_example_sperm_precedence.rds")){test_1 <- read_rds("results/single_example_sperm_precedence.rds")
-}else{test_1 <-
-  main_sim(row = 1,
-           input = parameters_single_example,
-           sex_limited = 1,
-           OSR_recording_interval = 0.5,
-           sperm_competition_weightings = sperm_precedence_weights)
-write_rds(test_1, "results/single_example_sperm_precedence.rds")
-}
 # fair raffle
-if(file.exists("results/single_example_fair_raffle.rds")){test_2 <- read_rds("results/single_example_fair_raffle.rds")
-}else{test_2 <-
-  main_sim(row = 1,
-           input = parameters_single_example,
-           sex_limited = 1,
-           OSR_recording_interval = 0.5,
-           sperm_competition_weightings = fair_raffle_weights)
-write_rds(test_2, "results/single_example_fair_raffle.rds")
+if(file.exists("results/single_run_fair_raffle.rds")){single_run_fair_raffle <- read_rds("results/single_run_fair_raffle.rds")
+}else{single_run_fair_raffle <-
+  simulation(row = 1,
+             input = parameters_single_example,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = fair_raffle_weights,
+             male_start_out = TRUE)
+write_rds(single_run_fair_raffle, "results/single_run_fair_raffle.rds")
+}
+
+# fair raffle with counter-factual
+if(file.exists("results/single_run_fair_raffle_cf.rds")){single_run_fair_raffle_cf <- read_rds("results/single_run_fair_raffle_cf.rds")
+}else{single_run_fair_raffle_cf <-
+  simulation(row = 1,
+             input = parameters_single_example,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = fair_raffle_weights,
+             male_start_out = FALSE)
+write_rds(single_run_fair_raffle_cf, "results/single_run_fair_raffle_cf.rds")
+}
+
+
+# last male sperm precedence
+if(file.exists("results/single_run_sperm_precedence.rds")){single_run_sperm_precedence <- read_rds("results/single_run_sperm_precedence.rds")
+}else{single_run_sperm_precedence <-
+  simulation(row = 1,
+             input = parameters_single_example,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = sperm_precedence_weights,
+             male_start_out = TRUE)
+write_rds(single_run_sperm_precedence, "results/single_run_sperm_precedence.rds")
+}
+
+# last male sperm precedence with counter-factual
+if(file.exists("results/single_run_sperm_precedence_cf.rds")){single_run_sperm_precedence_cf <- read_rds("results/single_run_sperm_precedence_cf.rds")
+}else{single_run_sperm_precedence_cf <-
+  simulation(row = 1,
+             input = parameters_single_example,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = sperm_precedence_weights,
+             male_start_out = FALSE)
+write_rds(single_run_sperm_precedence_cf, "results/single_run_sperm_precedence_cf.rds")
 }
 
 ```
+
+Now let's do it for a mild bet-hedging case (uncertainty in heatwave time from time = 10 to time = 15), for our four scenarios
+
+```{r}
+# fair raffle
+if(file.exists("results/single_run_fair_raffle_bh.rds")){single_run_fair_raffle_bh <-
+  read_rds("results/single_run_fair_raffle_bh.rds")
+}else{single_run_fair_raffle_bh <-
+  simulation(row = 1,
+             input = parameters_single_example_bh,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = fair_raffle_weights,
+             male_start_out = TRUE)
+write_rds(single_run_fair_raffle_bh, "results/single_run_fair_raffle_bh.rds")
+}
+
+# fair raffle with counter-factual
+if(file.exists("results/single_run_fair_raffle_cf_bh.rds")){single_run_fair_raffle_cf_bh <-
+  read_rds("results/single_run_fair_raffle_cf_bh.rds")
+}else{single_run_fair_raffle_cf_bh <-
+  simulation(row = 1,
+             input = parameters_single_example_bh,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = fair_raffle_weights,
+             male_start_out = FALSE)
+write_rds(single_run_fair_raffle_cf_bh, "results/single_run_fair_raffle_cf_bh.rds")
+}
+
+
+# last male sperm precedence
+if(file.exists("results/single_run_sperm_precedence_bh.rds")){single_run_sperm_precedence_bh <-
+  read_rds("results/single_run_sperm_precedence_bh.rds")
+}else{single_run_sperm_precedence_bh <-
+  simulation(row = 1,
+             input = parameters_single_example_bh,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = sperm_precedence_weights,
+             male_start_out = TRUE)
+write_rds(single_run_sperm_precedence_bh, "results/single_run_sperm_precedence_bh.rds")
+}
+
+# last male sperm precedence with counter-factual
+if(file.exists("results/single_run_sperm_precedence_cf_bh.rds")){single_run_sperm_precedence_cf_bh <-
+  read_rds("results/single_run_sperm_precedence_cf_bh.rds")
+}else{single_run_sperm_precedence_cf_bh <-
+  simulation(row = 1,
+             input = parameters_single_example_bh,
+             sex_limited = 1,
+             OSR_recording_interval = 0.5,
+             sperm_competition_weightings = sperm_precedence_weights,
+             male_start_out = FALSE)
+write_rds(single_run_sperm_precedence_cf_bh, "results/single_run_sperm_precedence_cf_bh.rds")
+}
+
+```
+
 
 Run the simulation for 2,000 generations, for many combinations of parameters. To do this, we make use of the `parallel` package, which allows us to split the simulation effort across multiple cores.
 
@@ -729,7 +853,7 @@ For testing, I've first included code for running the simulation on a single cor
 
 ```{r, eval=FALSE}
 lapply(1:10, # rows to run
-       main_sim,
+       simulation,
        input = parameter_space,
        sex_limited = 1,
        OSR_recording_interval = 0.5,
@@ -738,20 +862,20 @@ lapply(1:10, # rows to run
 
 Run the proper simulation by multi-coring, splitting it into manageable chunks
 
-```{r}
+```{r, eval=FALSE}
 
 # split parameter space up
 
-space_1 <- parameter_space[1:100,]
-space_2 <- parameter_space[101:200,]
-space_3 <- parameter_space[201:300,]
-space_4 <- parameter_space[301:400,]
-space_5 <- parameter_space[401:500,]
-space_6 <- parameter_space[501:600,]
-space_7_10 <- parameter_space[601:1000,]
-space_11_15 <- parameter_space[1001:1500,]
+space_1 <- parameter_space[1:400,]
+space_2 <- parameter_space[801:1600,]
+#space_3 <- parameter_space[201:300,]
+#space_4 <- parameter_space[301:400,]
+#space_5 <- parameter_space[401:500,]
+#space_6 <- parameter_space[501:600,]
+#space_7_10 <- parameter_space[601:1000,]
+#space_11_15 <- parameter_space[1001:1500,]
 
-if(!file.exists("results/complete_results_11_15.rds")){
+if(!file.exists("results/fair_raffle_1_400.rds")){
   
   # get the number of cores on the computer 
   n.cores <- parallel::detectCores()
@@ -763,7 +887,7 @@ if(!file.exists("results/complete_results_11_15.rds")){
   
   parallel::clusterEvalQ(cluster, c(library(dplyr)))
   
-  parallel::clusterExport(cluster, c("space_11_15",
+  parallel::clusterExport(cluster, c("space_1",
                                      "emergence_sample",
                                      "mother_finder_function",
                                      "father_finder_function",
@@ -772,19 +896,49 @@ if(!file.exists("results/complete_results_11_15.rds")){
                                      "sensible_sample"))
   
   results <- parallel::parLapply(cluster,
-                      1:nrow(space_11_15),
-                      main_sim,
-                      input = space_11_15,
+                      1:nrow(space_1),
+                      simulation,
+                      input = space_1,
                       sex_limited = 1,
                       OSR_recording_interval = 0.5,
-                      sperm_competition_weightings = sperm_mixing_weights)
-  write_rds(results, "results/complete_results_11_15.rds")
+                      sperm_competition_weightings = fair_raffle_weights)
+  write_rds(results, "results/fair_raffle_1_400.rds")
+}
+
+if(!file.exists("results/fair_raffle_801_1600.rds")){
+  
+  # get the number of cores on the computer 
+  n.cores <- parallel::detectCores()
+  
+  # make the cluster
+  cluster <- parallel::makeCluster(n.cores)
+  
+  # split parameters across cluster and import required functions and libraries
+  
+  parallel::clusterEvalQ(cluster, c(library(dplyr)))
+  
+  parallel::clusterExport(cluster, c("space_2",
+                                     "emergence_sample",
+                                     "mother_finder_function",
+                                     "father_finder_function",
+                                     "get_female_resource_quantity",
+                                     "get_male_time_in",
+                                     "sensible_sample"))
+  
+  results <- parallel::parLapply(cluster,
+                      1:nrow(space_2),
+                      simulation,
+                      input = space_2,
+                      sex_limited = 1,
+                      OSR_recording_interval = 0.5,
+                      sperm_competition_weightings = fair_raffle_weights)
+  write_rds(results, "results/fair_raffle_801_1600.rds")
 }
 ```
 
 Load the results
 
-```{r}
+```{r, eval=FALSE}
 
 results_1 <- read_rds("results/complete_results_1.rds")
 results_2 <- read_rds("results/complete_results_2.rds")
@@ -797,7 +951,7 @@ results_11_15 <- read_rds("results/complete_results_11_15.rds")
 
 ```
 
-## Plotting a single example
+## Plotting a single example {#sec-timeseriesplot}
 
 To get an idea for how long simulations need to run before trait values converge on some optimum, I ran a single simulation with the following parameter values:
 
@@ -808,100 +962,269 @@ glimpse(parameters_single_example)
 
 ### The evolution of protandry across many generations
 
-```{r, fig.height=8}
+::: {.panel-tabset}
 
-plotting_data_1 <-
-  test_1[1] %>% 
+## Constant heatwave time**
+
+```{r, fig.height=6, fig.width=11}
+
+# wrangle data directly from simulations
+
+plotting_data_fair_raffle <-
+  single_run_fair_raffle[1] %>% 
   as.data.frame() %>% 
   as_tibble() %>% 
   rename(Female_mu = X1,
          Female_sd = X2,
          Male_mu = X3,
          Male_sd = X4,
-         Prop_females_unmated = X5) %>% 
-  mutate(Generation = 0:5000) %>% 
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
   pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
   separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
-  pivot_wider(names_from = Measure, values_from = emergence_time) 
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Fair raffle",
+         Male_start = "Begin in time out") 
 
-plotting_data_2 <-
-  test_2[1] %>% 
+plotting_data_fair_raffle_cf <-
+  single_run_fair_raffle_cf[1] %>% 
   as.data.frame() %>% 
   as_tibble() %>% 
   rename(Female_mu = X1,
          Female_sd = X2,
          Male_mu = X3,
          Male_sd = X4,
-         Prop_females_unmated = X5) %>% 
-  mutate(Generation = 0:5000) %>% 
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
   pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
   separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
-  pivot_wider(names_from = Measure, values_from = emergence_time)
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Fair raffle",
+         Male_start = "Begin in time in") 
 
-p1<-
-  plotting_data_1 %>% 
-  ggplot(aes(x = Generation, y = mu, group = Sex, colour = Sex)) +
-  geom_line() +
+plotting_data_sperm_precedence <-
+  single_run_sperm_precedence[1] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  rename(Female_mu = X1,
+         Female_sd = X2,
+         Male_mu = X3,
+         Male_sd = X4,
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
+  pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
+  separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Sperm precedence",
+         Male_start = "Begin in time out") 
+
+plotting_data_sperm_precedence_cf <-
+  single_run_sperm_precedence_cf[1] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  rename(Female_mu = X1,
+         Female_sd = X2,
+         Male_mu = X3,
+         Male_sd = X4,
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
+  pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
+  separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Sperm precedence",
+         Male_start = "Begin in time in") 
+
+# combine into single data frame
+
+plotting_data_time_series <-
+  rbind(plotting_data_fair_raffle,
+        plotting_data_fair_raffle_cf,
+        plotting_data_sperm_precedence,
+        plotting_data_sperm_precedence_cf)
+
+# make the plots
+
+time_series_plots <-
+  plotting_data_time_series %>% 
+  ggplot(aes(x = Generation, 
+             y = mu, 
+             group = Sex, 
+             fill = Sex,
+             colour = Sex)) +
+  #geom_line() +
+  geom_ribbon(aes(ymin = mu - sd, ymax = mu + sd)) +
+  scale_fill_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
+                               pnw_palette("Sunset2", n = 5)[4])) +
   scale_colour_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
                                  pnw_palette("Sunset2", n = 5)[4])) +
-  scale_x_continuous(limits = c(0,5000)) +
-  labs(y = "Mean emergence time (breeding value)",
-       colour = "Sex",
-       title = "Last male sperm precedence") +
+  scale_x_continuous(limits = c(0,10000)) +
+  scale_y_continuous(limits = c(-7, 2),
+                     breaks = c(-6, -4, -2, 0, 2)) +
+  labs(y = "Emergence time (standard deviation around mean breeding value)",
+       colour = "Sex") +
+  facet_wrap(Sperm_competition ~ Male_start, nrow = 2,
+             labeller = label_glue('Sperm comp type: {`Sperm_competition`}\nMales: {`Male_start`}')) +
   theme_bw() +
   theme(legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5))
+        plot.title = element_text(hjust = 0.5),
+        panel.border = element_rect(fill = NA, colour = "black", size = .8),
+        strip.background = element_rect(colour = "black", fill = "Aliceblue", linewidth = .8))
 
-p2<-
-  plotting_data_2 %>% 
-  ggplot(aes(x = Generation, y = mu, group = Sex, colour = Sex)) +
-  geom_line() +
-  scale_colour_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
-                                 pnw_palette("Sunset2", n = 5)[4])) +
-  scale_x_continuous(limits = c(0,5000)) +
-  labs(y = "Mean emergence time (breeding value)",
-       colour = "Sex",
-       title = "Fair raffle sperm competition") +
-  theme_bw() +
-  theme(legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5))
 
-p3<-
-  plotting_data_1 %>% 
+matelessness_plots <-
+  plotting_data_time_series %>% 
   filter(Sex == "Female") %>% 
   ggplot(aes(x = Generation, y = Prop_females_unmated)) +
-  geom_line() +
-  scale_x_continuous(limits = c(0,5000)) +
-  scale_y_continuous(limits = c(0,1)) +
-  labs(y = "Proportion females unmated",
-       title = "Last male sperm precedence") +
+  geom_line(alpha = 1) +
+  scale_x_continuous(limits = c(0,10000)) +
+  scale_y_continuous(limits = c(0,0.3)) +
+  labs(y = "Proportion females unmated") +
+  facet_wrap(Sperm_competition~Male_start) +
   theme_bw() +
   theme(legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5))
+        plot.title = element_text(hjust = 0.5),
+        panel.border = element_rect(fill = NA, colour = "black", size = .8),
+        strip.background = element_rect(colour = "black", fill = "Aliceblue", linewidth = .8))
 
-p4<-
-  plotting_data_2 %>% 
-  filter(Sex == "Female") %>%
-  ggplot(aes(x = Generation, y = Prop_females_unmated)) +
-  geom_line() +
+time_series_plots / matelessness_plots
+
+```
+
+## Uncertain heatwave time**
+
+```{r, fig.height=6, fig.width=11}
+
+# wrangle data directly from simulations
+
+plotting_data_fair_raffle_bh <-
+  single_run_fair_raffle_bh[1] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  rename(Female_mu = X1,
+         Female_sd = X2,
+         Male_mu = X3,
+         Male_sd = X4,
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
+  pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
+  separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Fair raffle",
+         Male_start = "Begin in time out") 
+
+plotting_data_fair_raffle_cf_bh <-
+  single_run_fair_raffle_cf_bh[1] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  rename(Female_mu = X1,
+         Female_sd = X2,
+         Male_mu = X3,
+         Male_sd = X4,
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
+  pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
+  separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Fair raffle",
+         Male_start = "Begin in time in") 
+
+plotting_data_sperm_precedence_bh <-
+  single_run_sperm_precedence_bh[1] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  rename(Female_mu = X1,
+         Female_sd = X2,
+         Male_mu = X3,
+         Male_sd = X4,
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
+  pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
+  separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Sperm precedence",
+         Male_start = "Begin in time out") 
+
+plotting_data_sperm_precedence_cf_bh <-
+  single_run_sperm_precedence_cf_bh[1] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  rename(Female_mu = X1,
+         Female_sd = X2,
+         Male_mu = X3,
+         Male_sd = X4,
+         Prop_females_unmated = X6) %>% 
+  mutate(Generation = 0:10000) %>% 
+  select(-X5) %>% 
+  pivot_longer(cols = 1:4, names_to = "cat", values_to = "emergence_time") %>% 
+  separate(cat, into = c("Sex", "Measure"), sep = "_") %>% 
+  pivot_wider(names_from = Measure, values_from = emergence_time) %>% 
+  mutate(Sperm_competition = "Sperm precedence",
+         Male_start = "Begin in time in") 
+
+# combine into single data frame
+
+plotting_data_time_series_bh <-
+  rbind(plotting_data_fair_raffle_bh,
+        plotting_data_fair_raffle_cf_bh,
+        plotting_data_sperm_precedence_bh,
+        plotting_data_sperm_precedence_cf_bh)
+
+# make the plots
+
+time_series_plots_bh <-
+  plotting_data_time_series_bh %>% 
+  ggplot(aes(x = Generation, 
+             y = mu, 
+             group = Sex, 
+             fill = Sex,
+             colour = Sex)) +
+  #geom_line() +
+  geom_ribbon(aes(ymin = mu - sd, ymax = mu + sd)) +
+  scale_fill_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
+                                 pnw_palette("Sunset2", n = 5)[4])) +
   scale_colour_manual(values = c(pnw_palette("Sunset2", n = 5)[2],
                                  pnw_palette("Sunset2", n = 5)[4])) +
-  scale_x_continuous(limits = c(0,5000)) +
-  scale_y_continuous(limits = c(0,1)) +
-  labs(y = "Proportion females unmated",
-       title = "Fair raffle sperm competition") +
+  scale_x_continuous(limits = c(0,10000)) +
+  scale_y_continuous(limits = c(-7, 2),
+                     breaks = c(-6, -4, -2, 0, 2)) +
+  labs(y = "Emergence time (standard deviation around mean breeding value)",
+       colour = "Sex") +
+  facet_wrap(Sperm_competition ~ Male_start, nrow = 2,
+             labeller = label_glue('Sperm comp type: {`Sperm_competition`}\nMales: {`Male_start`}')) +
   theme_bw() +
   theme(legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5))
+        plot.title = element_text(hjust = 0.5),
+        panel.border = element_rect(fill = NA, colour = "black", size = .8),
+        strip.background = element_rect(colour = "black", fill = "Aliceblue", linewidth = .8))
 
-top <- (p1 + p2) + plot_layout(axis_titles = "collect", guides = "collect") & 
-  theme(legend.position = 'bottom')
 
-bottom <- (p3+p4) + plot_layout(axis_titles = "collect")
+matelessness_plots_bh <-
+  plotting_data_time_series_bh %>% 
+  filter(Sex == "Female") %>% 
+  ggplot(aes(x = Generation, y = Prop_females_unmated)) +
+  geom_line(alpha = 1) +
+  scale_x_continuous(limits = c(0,10000)) +
+  scale_y_continuous(limits = c(0,0.3)) +
+  labs(y = "Proportion females unmated") +
+  facet_wrap(Sperm_competition~Male_start) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5),
+        panel.border = element_rect(fill = NA, colour = "black", size = .8),
+        strip.background = element_rect(colour = "black", fill = "Aliceblue", linewidth = .8))
 
-top/bottom
-  
+time_series_plots_bh / matelessness_plots_bh
+
 ```
+
+:::
 
 ### The evolution of the OSR across many generations 
 
@@ -909,8 +1232,8 @@ For this example, we can also plot how the OSR changes in response to selection.
 
 ```{r, fig.height=7}
 
-OSR_data_1 <-
-  test_1[2] %>% 
+OSR_data_fair_raffle <-
+  single_run_fair_raffle[2] %>% 
   as.data.frame() %>% 
   as_tibble() %>% 
   mutate(Time = seq(from = -15, to = 10.5, by = 0.5)) %>% 
@@ -936,20 +1259,21 @@ OSR_data_1 <-
            generation == 1800 |
            generation == 2100 |
            generation == 2400 |
-           generation == 2700 |
            generation == 3000 |
-           generation == 3300 |
-           generation == 3600 |
-           generation == 3900 |
-           generation == 4200 |
-           generation == 4500 |
-           generation == 4800 |
-           generation == 5000) %>% 
+           generation == 4000 |
+           generation == 5000 |
+           generation == 6000 |
+           generation == 7000 |
+           generation == 8000 |
+           generation == 9000 |
+           generation == 10000) %>% 
   mutate(Female = if_else(Female == 0, NaN, Female),
-         Male = if_else(Male == 0, NaN, Male))
+         Male = if_else(Male == 0, NaN, Male),
+         Sperm_competition = "Fair raffle",
+         Male_start = "Begin in time out")
 
-OSR_data_2 <-
-  test_2[2] %>% 
+OSR_data_fair_raffle_cf <-
+  single_run_fair_raffle_cf[2] %>% 
   as.data.frame() %>% 
   as_tibble() %>% 
   mutate(Time = seq(from = -15, to = 10.5, by = 0.5)) %>% 
@@ -975,30 +1299,111 @@ OSR_data_2 <-
            generation == 1800 |
            generation == 2100 |
            generation == 2400 |
-           generation == 2700 |
            generation == 3000 |
-           generation == 3300 |
-           generation == 3600 |
-           generation == 3900 |
-           generation == 4200 |
-           generation == 4500 |
-           generation == 4800 |
-           generation == 5000) %>% 
+           generation == 4000 |
+           generation == 5000 |
+           generation == 6000 |
+           generation == 7000 |
+           generation == 8000 |
+           generation == 9000 |
+           generation == 10000) %>% 
   mutate(Female = if_else(Female == 0, NaN, Female),
-         Male = if_else(Male == 0, NaN, Male))
+         Male = if_else(Male == 0, NaN, Male),
+         Sperm_competition = "Fair raffle",
+         Male_start = "Begin in time in")
+
+OSR_data_sperm_precedence <-
+  single_run_sperm_precedence[2] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  mutate(Time = seq(from = -15, to = 10.5, by = 0.5)) %>% 
+  pivot_longer(cols = !last_col(), 
+               names_to = "class", 
+               values_to = "Individuals") %>% 
+  separate(class, into = c("place", "generation"), sep = "\\.") %>% 
+  mutate(sex = case_when(str_detect(place, "X1") ~ "Female",
+                         .default = "Male"),
+         generation = if_else(is.na(generation), "0", generation),
+         generation = as.numeric(generation)) %>%
+  select(-place) %>% 
+  filter(Time != 10.5) %>% 
+  pivot_wider(names_from = sex, values_from = Individuals) %>% 
+  mutate(OSR = Male / (Male + Female)) %>% 
+  mutate(resources = 1/(1 + exp(-0.5*(Time - (0))))) %>% 
+  filter(generation == 0 |
+           generation == 300 |
+           generation == 600 |
+           generation == 900 |
+           generation == 1200 |
+           generation == 1500 |
+           generation == 1800 |
+           generation == 2100 |
+           generation == 2400 |
+           generation == 3000 |
+           generation == 4000 |
+           generation == 5000 |
+           generation == 6000 |
+           generation == 7000 |
+           generation == 8000 |
+           generation == 9000 |
+           generation == 10000) %>%  
+  mutate(Female = if_else(Female == 0, NaN, Female),
+         Male = if_else(Male == 0, NaN, Male),
+         Sperm_competition = "Sperm precedence",
+         Male_start = "Begin in time out")
+
+OSR_data_sperm_precedence_cf <-
+  single_run_sperm_precedence_cf[2] %>% 
+  as.data.frame() %>% 
+  as_tibble() %>% 
+  mutate(Time = seq(from = -15, to = 10.5, by = 0.5)) %>% 
+  pivot_longer(cols = !last_col(), 
+               names_to = "class", 
+               values_to = "Individuals") %>% 
+  separate(class, into = c("place", "generation"), sep = "\\.") %>% 
+  mutate(sex = case_when(str_detect(place, "X1") ~ "Female",
+                         .default = "Male"),
+         generation = if_else(is.na(generation), "0", generation),
+         generation = as.numeric(generation)) %>%
+  select(-place) %>% 
+  filter(Time != 10.5) %>% 
+  pivot_wider(names_from = sex, values_from = Individuals) %>% 
+  mutate(OSR = Male / (Male + Female)) %>% 
+  mutate(resources = 1/(1 + exp(-0.5*(Time - (0))))) %>% 
+  filter(generation == 0 |
+           generation == 300 |
+           generation == 600 |
+           generation == 900 |
+           generation == 1200 |
+           generation == 1500 |
+           generation == 1800 |
+           generation == 2100 |
+           generation == 2400 |
+           generation == 3000 |
+           generation == 4000 |
+           generation == 5000 |
+           generation == 6000 |
+           generation == 7000 |
+           generation == 8000 |
+           generation == 9000 |
+           generation == 10000) %>% 
+  mutate(Female = if_else(Female == 0, NaN, Female),
+         Male = if_else(Male == 0, NaN, Male),
+         Sperm_competition = "Sperm precedence",
+         Male_start = "Begin in time in")
 
 ```
 
 ::: {.panel-tabset}
 
-## Last male sperm precedence
+## Fair raffle with males starting out
 
 ```{r}
 
 pal_1 <- moma.colors("Alkalay2" , n=18, type="continuous")
 
-OSR_f_1 <-
-OSR_data_1  %>% 
+OSR_f_fair_raffle <-
+OSR_data_fair_raffle  %>% 
   ggplot(aes(x = Time, y = Female, 
              group = generation, colour= generation)) +
   geom_point(alpha = 1, height = 1, width = 0)+
@@ -1010,8 +1415,8 @@ OSR_data_1  %>%
   scale_colour_gradientn(colours = pal_1) +
   theme_bw()
 
-OSR_m_1 <-
-OSR_data_1  %>% 
+OSR_m_fair_raffle <-
+OSR_data_fair_raffle  %>% 
   ggplot(aes(x = Time, y = Male, 
              group = generation, colour= generation)) +
   geom_point(alpha = 1, height = 1, width = 0)+
@@ -1023,8 +1428,8 @@ OSR_data_1  %>%
   scale_colour_gradientn(colours = pal_1) +
   theme_bw()
 
-OSR_1 <-
-OSR_data_1  %>% 
+OSR_fair_raffle <-
+OSR_data_fair_raffle  %>% 
   ggplot(aes(x = Time, y = OSR, 
              group = generation, colour= generation)) +
   geom_point(alpha = 1, height = 0.01, width = 0) +
@@ -1035,16 +1440,20 @@ OSR_data_1  %>%
   scale_colour_gradientn(colours = pal_1) +
   theme_bw()
 
-OSR_f_1 + OSR_m_1 + OSR_1 + guide_area() +
+fair_raffle_OSR_plot <-
+  OSR_f_fair_raffle + OSR_m_fair_raffle + OSR_fair_raffle + guide_area() +
   plot_layout(guides = 'collect')
   
 ```
 
-## Fair raffle sperm competition
+## Fair raffle with males starting in
 
 ```{r}
-OSR_f_2 <-
-OSR_data_2  %>% 
+
+pal_1 <- moma.colors("Alkalay2" , n=18, type="continuous")
+
+OSR_f_fair_raffle_cf <-
+OSR_data_fair_raffle_cf  %>% 
   ggplot(aes(x = Time, y = Female, 
              group = generation, colour= generation)) +
   geom_point(alpha = 1, height = 1, width = 0)+
@@ -1056,8 +1465,8 @@ OSR_data_2  %>%
   scale_colour_gradientn(colours = pal_1) +
   theme_bw()
 
-OSR_m_2 <-
-OSR_data_2  %>% 
+OSR_m_fair_raffle_cf <-
+OSR_data_fair_raffle_cf  %>% 
   ggplot(aes(x = Time, y = Male, 
              group = generation, colour= generation)) +
   geom_point(alpha = 1, height = 1, width = 0)+
@@ -1069,8 +1478,8 @@ OSR_data_2  %>%
   scale_colour_gradientn(colours = pal_1) +
   theme_bw()
 
-OSR_2 <-
-OSR_data_2  %>% 
+OSR_fair_raffle_cf <-
+OSR_data_fair_raffle_cf  %>% 
   ggplot(aes(x = Time, y = OSR, 
              group = generation, colour= generation)) +
   geom_point(alpha = 1, height = 0.01, width = 0) +
@@ -1081,18 +1490,115 @@ OSR_data_2  %>%
   scale_colour_gradientn(colours = pal_1) +
   theme_bw()
 
-OSR_f_2 + OSR_m_2 + OSR_2 + guide_area() +
+fair_raffle_cf_OSR_plot <-
+  OSR_f_fair_raffle_cf + OSR_m_fair_raffle_cf + OSR_fair_raffle_cf + guide_area() +
+  plot_layout(guides = 'collect')
+  
+```
+
+## Last male sperm precedence with males starting out
+
+```{r}
+OSR_f_sperm_precedence <-
+  OSR_data_sperm_precedence  %>% 
+  ggplot(aes(x = Time, y = Female, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 1, width = 0)+
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  #geom_line(aes(y = resources), colour = "black", linetype =2) +
+  scale_y_continuous(limits = c(0, 300)) +
+  labs(y = "Number of females in mating pool",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+OSR_m_sperm_precedence <-
+  OSR_data_sperm_precedence  %>% 
+  ggplot(aes(x = Time, y = Male, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 1, width = 0)+
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  #geom_line(aes(y = resources), colour = "black", linetype =2) +
+  scale_y_continuous(limits = c(0, 300)) +
+  labs(y = "Number of males in mating pool",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+OSR_sperm_precedence <-
+  OSR_data_sperm_precedence  %>% 
+  ggplot(aes(x = Time, y = OSR, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 0.01, width = 0) +
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  geom_line(aes(y = resources), colour = "black", linetype =2) +
+  labs(y = "OSR (prop. males in mating pool)",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+sperm_precedence_OSR_plot <-
+  OSR_f_sperm_precedence + OSR_m_sperm_precedence + OSR_sperm_precedence +
+  guide_area() +
+  plot_layout(guides = 'collect')
+  
+```
+
+## Last male sperm precedence with males starting in
+
+```{r}
+OSR_f_sperm_precedence_cf <-
+  OSR_data_sperm_precedence_cf  %>% 
+  ggplot(aes(x = Time, y = Female, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 1, width = 0)+
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  #geom_line(aes(y = resources), colour = "black", linetype =2) +
+  scale_y_continuous(limits = c(0, 300)) +
+  labs(y = "Number of females in mating pool",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+OSR_m_sperm_precedence_cf <-
+  OSR_data_sperm_precedence_cf  %>% 
+  ggplot(aes(x = Time, y = Male, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 1, width = 0)+
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  #geom_line(aes(y = resources), colour = "black", linetype =2) +
+  scale_y_continuous(limits = c(0, 300)) +
+  labs(y = "Number of males in mating pool",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+OSR_sperm_precedence_cf <-
+  OSR_data_sperm_precedence_cf  %>% 
+  ggplot(aes(x = Time, y = OSR, 
+             group = generation, colour= generation)) +
+  geom_point(alpha = 1, height = 0.01, width = 0) +
+  geom_line(alpha = 0.6, linewidth = 0.8) +
+  geom_line(aes(y = resources), colour = "black", linetype =2) +
+  labs(y = "OSR (prop. males in mating pool)",
+       colour = "Generation") +
+  scale_colour_gradientn(colours = pal_1) +
+  theme_bw()
+
+sperm_precedence_OSR_plot_cf <-
+  OSR_f_sperm_precedence_cf + OSR_m_sperm_precedence_cf + OSR_sperm_precedence_cf +
+  guide_area() +
   plot_layout(guides = 'collect')
   
 ```
 
 :::
 
-## Full results
+## Full results {#sec-fullresults}
 
 Load and wrangle the large output
 
-```{r}
+```{r, eval=FALSE}
 
 results_processer <- 
   function(row, results){
@@ -1147,7 +1653,7 @@ wrangled_results <-
 
 Build panels A-D
 
-```{r}
+```{r, eval=FALSE}
 # re-define the palette
 pal_2 <- pnw_palette("Shuksan2",20)
 
@@ -1178,7 +1684,7 @@ heat_map_emergence <-
 
 Build panels E-F
 
-```{r}
+```{r, eval=FALSE}
 
 #pal_3 <- moma.colors("Alkalay2" , n=20, type="continuous")
 pal_3 <- pnw_palette("Anemone",20)
@@ -1208,7 +1714,7 @@ heat_map_protandry <-
 
 Plot
 
-```{r}
+```{r, eval=FALSE}
 #| fig-height: 8
 heat_map_emergence/
 heat_map_protandry + plot_layout(axes = "collect",
