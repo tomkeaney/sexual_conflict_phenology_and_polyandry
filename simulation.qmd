@@ -964,9 +964,9 @@ glimpse(parameters_single_example)
 
 ::: {.panel-tabset}
 
-## Constant heatwave time**
+## Constant heatwave time
 
-```{r, fig.height=6, fig.width=11}
+```{r, fig.height=11, fig.width=6}
 
 # wrangle data directly from simulations
 
@@ -1094,9 +1094,9 @@ time_series_plots / matelessness_plots
 
 ```
 
-## Uncertain heatwave time**
+## Uncertain heatwave time
 
-```{r, fig.height=6, fig.width=11}
+```{r, fig.height=11, fig.width=6}
 
 # wrangle data directly from simulations
 
@@ -1443,6 +1443,8 @@ OSR_data_fair_raffle  %>%
 fair_raffle_OSR_plot <-
   OSR_f_fair_raffle + OSR_m_fair_raffle + OSR_fair_raffle + guide_area() +
   plot_layout(guides = 'collect')
+
+fair_raffle_OSR_plot
   
 ```
 
@@ -1493,6 +1495,8 @@ OSR_data_fair_raffle_cf  %>%
 fair_raffle_cf_OSR_plot <-
   OSR_f_fair_raffle_cf + OSR_m_fair_raffle_cf + OSR_fair_raffle_cf + guide_area() +
   plot_layout(guides = 'collect')
+
+fair_raffle_cf_OSR_plot
   
 ```
 
@@ -1541,6 +1545,8 @@ sperm_precedence_OSR_plot <-
   OSR_f_sperm_precedence + OSR_m_sperm_precedence + OSR_sperm_precedence +
   guide_area() +
   plot_layout(guides = 'collect')
+
+sperm_precedence_OSR_plot
   
 ```
 
@@ -1589,6 +1595,8 @@ sperm_precedence_OSR_plot_cf <-
   OSR_f_sperm_precedence_cf + OSR_m_sperm_precedence_cf + OSR_sperm_precedence_cf +
   guide_area() +
   plot_layout(guides = 'collect')
+
+sperm_precedence_OSR_plot_cf
   
 ```
 
